@@ -24,6 +24,8 @@ Python package to interface an igus Robot Control via the CRI protocol.
 - CAN Bridge
 
 # Getting Started
+An API documentation as HTML can be found in `docs`.
+
 ## Installation
 Using the library requires no additional libraries, only testing has external dependencies.
 
