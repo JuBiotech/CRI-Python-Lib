@@ -3,6 +3,8 @@ from enum import Enum
 
 
 class RobotMode(Enum):
+    """Enum of possible robot modes for jogging, `FSM` does not support jogging."""
+
     JOINT = "joint"
     CARTBASE = "cartbase"
     CARTTOOL = "carttool"
@@ -11,6 +13,8 @@ class RobotMode(Enum):
 
 
 class KinematicsState(Enum):
+    """Enum of possible states of kinematics"""
+
     NO_ERROR = 0
     JOINT_MIN = 13
     JOINT_MAX = 14
@@ -27,6 +31,8 @@ class KinematicsState(Enum):
 
 
 class OperationMode(Enum):
+    """Enum of possible operartion modes"""
+
     NOT_ENABLED = -1
     NORMAL = 0
     MANUAL = 1
@@ -34,12 +40,16 @@ class OperationMode(Enum):
 
 
 class RunState(Enum):
+    """Enum of possible run states"""
+
     STOPPED = 0
     PAUSED = 1
     RUNNING = 2
 
 
 class ReplayMode(Enum):
+    """Enum of possible replay modes"""
+
     SINGLE = 0
     REPEAT = 1
     STEP = 2
@@ -48,6 +58,8 @@ class ReplayMode(Enum):
 
 @dataclass
 class ErrorStates:
+    """error states of axes, multiple errors can apply"""
+
     over_temp: bool = False
     estop_lowv: bool = False
     motor_not_enabled: bool = False
@@ -60,6 +72,8 @@ class ErrorStates:
 
 @dataclass
 class RobotCartesianPosition:
+    """Represents the cartesian position of a robot"""
+
     X: float = 0.0
     Y: float = 0.0
     Z: float = 0.0
@@ -70,6 +84,8 @@ class RobotCartesianPosition:
 
 @dataclass
 class PlatformCartesianPosition:
+    """Represents the cartesian position of a platform"""
+
     X: float = 0.0
     Y: float = 0.0
     RZ: float = 0.0
@@ -77,6 +93,8 @@ class PlatformCartesianPosition:
 
 @dataclass
 class JointsState:
+    """Represents the joints state of a robot"""
+
     A1: float = 0.0
     A2: float = 0.0
     A3: float = 0.0
@@ -97,6 +115,8 @@ class JointsState:
 
 @dataclass
 class PosVariable:
+    """Represents a position variable"""
+
     X: float = 0.0
     Y: float = 0.0
     Z: float = 0.0
@@ -116,6 +136,8 @@ class PosVariable:
 
 @dataclass
 class OperationInfo:
+    """Operation statistics sent by the robot controler"""
+
     program_starts_total: int = 0
     up_time_complete: float = 0.0
     up_time_enabled: float = 0.0
@@ -126,13 +148,18 @@ class OperationInfo:
 
 
 class ReferencingAxisState(Enum):
+    """Enum of possible referencing states of an axis"""
+
     NOT_REFERENCED = 0
     REFERENCED = 1
     REFERENCING = 2
 
+
 @dataclass
 class ReferencingState:
-    global_state:ReferencingAxisState = ReferencingAxisState.NOT_REFERENCED
+    """Represents the overall referencing state of the robot."""
+
+    global_state: ReferencingAxisState = ReferencingAxisState.NOT_REFERENCED
     mandatory: bool = True
     ref_prog_enabled: bool = False
     ref_prog_running: bool = False
@@ -149,7 +176,7 @@ class ReferencingState:
     E4: ReferencingAxisState = ReferencingAxisState.NOT_REFERENCED
     E5: ReferencingAxisState = ReferencingAxisState.NOT_REFERENCED
     E6: ReferencingAxisState = ReferencingAxisState.NOT_REFERENCED
-    
+
 
 @dataclass
 class RobotState:
@@ -158,83 +185,144 @@ class RobotState:
     """
 
     mode: RobotMode = RobotMode.JOINT
+    """Robot execution mode"""
+
     joints_set_point: JointsState = field(default_factory=JointsState)
+    """Set point of robot joints"""
+
     joints_current: JointsState = field(default_factory=JointsState)
+    """Actual values of robot joints"""
 
     position_robot: RobotCartesianPosition = field(
         default_factory=RobotCartesianPosition
     )
+    """Current cartesian position of robot"""
+
     position_platform: PlatformCartesianPosition = field(
         default_factory=PlatformCartesianPosition
     )
+    """Current cartesian position of platform"""
 
     cart_speed_mm_per_s: float = 0.0
+    """current speed of the cart in mm/s"""
 
     override: float = 100.0
+    """global robot speed override"""
 
     din: list[bool] = field(default_factory=lambda: [False] * 64)
+    """digital ins"""
+
     dout: list[bool] = field(default_factory=lambda: [False] * 64)
+    """digital outs"""
 
     emergency_stop_ok = False
+    """`True` if emergency stop circuit is closed"""
+
     main_relay = False
+    """`True` if main power relay is closed"""
 
     supply_voltage: float = 0.0
+    """current supply voltage"""
+
     battery_percent: float = 0.0
+    """battery percent of mobile platform"""
 
     current_total = 0.0
+    """total current drawn by robot"""
 
     current_joints: list[float] = field(default_factory=lambda: [0.0] * 16)
+    """current drawn by individual axes"""
 
     kinematics_state: KinematicsState = KinematicsState.MOTION_NOT_ALLOWED
+    """global kinematics state"""
 
     operation_mode: OperationMode = OperationMode.NOT_ENABLED
+    """global operation mode"""
 
     global_signals: list[bool] = field(default_factory=lambda: [False] * 128)
+    """global signals"""
 
     frame_name: str = ""
+    """name of currently active frame"""
+
     frame_position_current: RobotCartesianPosition = field(
         default_factory=RobotCartesianPosition
     )
+    """position in currently active frame"""
 
     main_main_program: str = ""
+    """main program of main interpreter"""
+
     main_current_program: str = ""
+    """currently active program of main interpreter, can be different than main_main_program in case of sub programm"""
 
     logic_main_program: str = ""
+    """main programm of logic interpreter"""
+
     logic_current_program: str = ""
+    """currently active program of logic interpreter, can be different than logic_main_program in case of sub programm"""
 
     main_commands_count: int = 0
+    """total number of commands in main program"""
+
     logic_commands_count: int = 0
+    """total number of commands in logic program"""
 
     main_current_command: int = 0
+    """index of currently executed command in main interpreter"""
+
     logic_current_command: int = 0
+    """index of currently executed command in logic interpreter"""
 
     main_runstate: RunState = RunState.STOPPED
+    """runstate of main interpreter"""
+
     logic_runstate: RunState = RunState.STOPPED
+    """runstate of logic interpreter"""
 
     main_replay_mode: ReplayMode = ReplayMode.SINGLE
+    """replay mode of main interpreter"""
+
     logic_replay_mode: ReplayMode = ReplayMode.SINGLE
+    """replay mode of logic interpreter"""
 
     error_states: list[ErrorStates] = field(
         default_factory=lambda: [ErrorStates()] * 16
     )
+    """error states of individual axes"""
 
     cycle_time: float = 0.0
+    """cycle time of robot control loop"""
+
     workload: float = 0.0
+    """workload of robot control cpu"""
 
     gripper_state: float = 0.0
+    """current opening value of the gripper"""
 
     variabels: dict[str : [PosVariable | float]] = field(default_factory=dict)
+    """variables saved in robot controller"""
 
     operation_info: OperationInfo = field(default_factory=OperationInfo)
+    """operation statistics of robot controller"""
 
     active_control: bool = False
+    """indicates whether the connection has active control of the robot"""
 
     robot_control_version: str = ""
+    """version of robot control software"""
 
     robot_configuration: str = ""
+    """configuration of robot"""
+
     robot_type: str = ""
+    """type of robot"""
+
     gripper_type: str = ""
+    """type of gripper"""
 
     project_file: str = ""
+    """currently active project file"""
 
     referencing_state: ReferencingState = field(default_factory=ReferencingState)
+    """individual referencing state of all axes"""
