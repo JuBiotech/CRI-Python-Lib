@@ -28,6 +28,7 @@
   <li><a href="#getting-started">Getting Started</a>
   <ul>
     <li><a href="#installation">Installation</a></li>
+    <li><a href="#usage">Usage</a></li>
     <li><a href="#examples">Examples</a></li>
   </ul></li>
   <li><a href="#tests">Tests</a></li>
@@ -100,6 +101,23 @@ cri_lib    </h1>
 <p>Using the library requires no additional libraries, only testing has external dependencies.</p>
 
 <p>In the top directory of this repository execute <code>pip install .</code></p>
+
+<h2 id="usage">Usage</h2>
+
+<p>The library provides the <code>CRIController</code> class which is the main interface to controll the iRC. It handles the network connection and starts background threads for keep alive messages and processing of received messages. Movement functions directly return even though the move might not be finisched. If you want to wait for the move to finish, set the <code>wait_move_finished</code> parameter to <code>True</code>.
+Most function return a bool to check whether the execution was successful.</p>
+
+<h3 id="typical-procedure">Typical procedure</h3>
+
+<ol>
+<li>Connect to iRC: <code>CRIController.connect(...)</code> Default IP is <code>192.168.3.11</code> with port <code>3921</code>. For using the simulation in the iRC desktop software, connect to <code>127.0.0.1</code>, most of the time the port in the simulation is <code>3921</code>, but can be different. Have a look at the log if you are unable to connect. Check whether connection was successfull via the returned bool.</li>
+<li>If you want to control the robot, acquire active control via <code>CRIController.set_active_control(True)</code>.</li>
+<li>Enable drives with <code>CRIController.enable()</code></li>
+<li>Wait unitl axes are ready <code>CRIcontroller.wait_for_kinematics_ready()</code></li>
+<li>Do some work with your robot, see API documentation for all functionality.</li>
+<li>Diable drives with <code>CRIController.disable()</code></li>
+<li>Close connection with <code>CRIController.close()</code></li>
+</ol>
 
 <h2 id="examples">Examples</h2>
 
