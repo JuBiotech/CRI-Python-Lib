@@ -34,7 +34,7 @@ The library provides the `CRIController` class which is the main interface to co
 Most function return a bool to check whether the execution was successful.
 
 ### Typical procedure
-1. Connect to iRC: `CRIController.connect(...)` Default IP is `192.168.3.11` with port `3921`. For using the simulation in the iRC desktop software, connect to `127.0.0.1`, most of the time the port in the simulation is `3921`, but can be different. Have a look at the log if you are unable to connect. Check whether connection was successfull via the returned bool.
+1. Connect to iRC: `CRIController.connect(...)` Default IP is `192.168.3.11` with port `3920`. For using the simulation in the iRC desktop software, connect to `127.0.0.1`, most of the time the port in the simulation is `3921`, but can be different. Have a look at the log if you are unable to connect. Check whether connection was successfull via the returned bool.
 2. If you want to control the robot, acquire active control via `CRIController.set_active_control(True)`.
 3. Enable drives with `CRIController.enable()`
 4. Wait unitl axes are ready `CRIcontroller.wait_for_kinematics_ready()`
