@@ -26,6 +26,7 @@ class CRIController:
 
     class MotionType(Enum):
         """Robot Motion Type for Jogging"""
+
         Joint = "Joint"
         CartBase = "CartBase"
         CartTool = "CartTool"
@@ -573,7 +574,9 @@ class CRIController:
         new_timeout = timeout
         while new_timeout > 0.0:
             self.wait_for_status_update(timeout=new_timeout)
-            if self.robot_state.kinematics_state == KinematicsState.NO_ERROR:
+            if (self.robot_state.kinematics_state == KinematicsState.NO_ERROR) and (
+                self.robot_state.combined_axes_error == "NoError"
+            ):
                 return True
 
             new_timeout = timeout - (time() - start_time)
@@ -1124,8 +1127,8 @@ class CRIController:
         else:
             return False
 
-    def load_programm(self, program_name:str) -> bool:
-        """ Load a program file from disk into the robot controller
+    def load_programm(self, program_name: str) -> bool:
+        """Load a program file from disk into the robot controller
 
         Parameters
         ----------
@@ -1152,9 +1155,9 @@ class CRIController:
                 return True
         else:
             return False
-        
-    def load_logic_programm(self, program_name:str) -> bool:
-        """ Load a logic program file from disk into the robot controller
+
+    def load_logic_programm(self, program_name: str) -> bool:
+        """Load a logic program file from disk into the robot controller
 
         Parameters
         ----------
@@ -1208,7 +1211,7 @@ class CRIController:
 
     def stop_programm(self) -> bool:
         """Stop currently running Program
-        
+
         Returns
         -------
         bool
@@ -1232,7 +1235,7 @@ class CRIController:
 
     def pause_programm(self) -> bool:
         """Pause currently running Program
-        
+
         Returns
         -------
         bool
@@ -1303,7 +1306,7 @@ class CRIController:
 
         command = "CMD UploadFileFinish"
 
-        if  self._send_command(command, True) is None:
+        if self._send_command(command, True) is None:
             return False
 
     def enable_can_bridge(self, enabled: bool) -> None:
@@ -1337,8 +1340,10 @@ class CRIController:
         if not self.can_mode:
             logging.debug("can_send: CAN mode not enabled")
             return
-        
-        command = f"CANBridge Msg ID {msg_id} Len {length} Data " + " ".join([str(int(i)) for i in data])
+
+        command = f"CANBridge Msg ID {msg_id} Len {length} Data " + " ".join(
+            [str(int(i)) for i in data]
+        )
 
         self._send_command(command)
 
@@ -1360,5 +1365,59 @@ class CRIController:
             item = self.can_queue.get(blocking, timeout)
         except Empty:
             return None
-        
+
         return item
+
+    def get_board_temperatures(self, blocking: bool = True, timeout: float | None = None) -> bool:
+        """Receive motor controller PCB temperatures and save in robot state
+
+            Parameters
+            ----------
+            blocking: bool
+                wait for response, always returns True if not waiting
+            
+            timeout: float | None
+                timeout for waiting in seconds or None for infinite waiting
+        """
+        if (
+            self._send_command("SYSTEM GetBoardTemp", True, "info_boardtemp")
+            is not None
+        ):
+            if (
+                error_msg := self._wait_for_answer(
+                    "info_boardtemp", timeout=self.DEFAULT_ANSWER_TIMEOUT
+                )
+            ) is not None:
+                logging.debug("Error in GetBoardTemp command: %s", error_msg)
+                return False
+            else:
+                return True
+        else:
+            return False
+        
+    def get_motor_temperatures(self, blocking: bool = True, timeout: float | None = None) -> bool:
+        """Receive motor temperatures and save in robot state
+
+            Parameters
+            ----------
+            blocking: bool
+                wait for response, always returns True if not waiting
+            
+            timeout: float | None
+                timeout for waiting in seconds or None for infinite waiting
+        """
+        if (
+            self._send_command("SYSTEM GetMotorTemp", True, "info_motortemp")
+            is not None
+        ):
+            if (
+                error_msg := self._wait_for_answer(
+                    "info_motortemp", timeout=self.DEFAULT_ANSWER_TIMEOUT
+                )
+            ) is not None:
+                logging.debug("Error in GetMotorTemp command: %s", error_msg)
+                return False
+            else:
+                return True
+        else:
+            return False

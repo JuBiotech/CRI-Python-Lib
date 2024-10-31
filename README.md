@@ -22,6 +22,7 @@ Python package to interface an igus Robot Control via the CRI protocol.
     - Upload
     - Start / Pause / Stop
 - CAN Bridge
+- Get Board and Motor Temperature (only board supported by ReBeL)
 
 # Getting Started
 ## Installation

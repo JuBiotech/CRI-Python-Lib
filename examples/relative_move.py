@@ -23,7 +23,7 @@ controller.wait_for_kinematics_ready(10)
 controller.set_override(100.0)
 
 print("move")
-#relative move x +10mm
+#relative move x,y,z +20mm and back
 controller.move_base_relative(20.0, 20.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, wait_move_finished=True, move_finished_timeout= 1000)
 controller.move_base_relative(-20.0, -20.0, -20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, wait_move_finished=True, move_finished_timeout= 1000)
 

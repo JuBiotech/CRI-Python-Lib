@@ -1,5 +1,7 @@
 import threading
 
+import pytest
+
 from cri_lib import (
     KinematicsState,
     OperationMode,
@@ -31,7 +33,7 @@ OVERRIDE 80.0
 DIN 0000000000000FF00 DOUT 0000000000000FF00
 ESTOP 3 SUPPLY 23000 CURRENTALL 2600
 CURRENTJOINTS 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160
-ERROR no_error FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
+ERROR no_error 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255
 KINSTATE 30
 OPMODE -1
 CARTSPEED 123.4
@@ -128,6 +130,7 @@ CRIEND
         0.15,
         0.16,
     ]
+    robot_state_correct.combined_axes_error = "no_error"
 
     controller = CRIController()
     controller._parse_message(test_message)
@@ -526,3 +529,62 @@ def test_parse_can_brdige():
 
     assert controller.answer_events["CAN"].is_set()
     assert controller.can_queue.get_nowait() == can_message
+
+
+def test_info_boardtemps():
+    test_message = "CRISTART 6789 INFO BoardTemp 21.1 22.2 23.3 24.4 25.5 26.6 27.7 28.8 29.9 30.0 31.1 32.2 33.3 34.4 35.5 36.6 CRIEND"
+
+    board_temps = [
+        21.1,
+        22.2,
+        23.3,
+        24.4,
+        25.5,
+        26.6,
+        27.7,
+        28.8,
+        29.9,
+        30.0,
+        31.1,
+        32.2,
+        33.3,
+        34.4,
+        35.5,
+        36.6,
+    ]
+
+    controller = CRIController()
+    controller.answer_events["info_boardtemp"] = threading.Event()
+    controller._parse_message(test_message)
+
+    assert controller.answer_events["info_boardtemp"].is_set()
+    assert controller.robot_state.board_temps == pytest.approx(board_temps)
+
+def test_info_motortemps():
+    test_message = "CRISTART 6789 INFO MotorTemp 21.1 22.2 23.3 24.4 25.5 26.6 27.7 28.8 29.9 30.0 31.1 32.2 33.3 34.4 35.5 36.6 CRIEND"
+
+    motor_temps = [
+        21.1,
+        22.2,
+        23.3,
+        24.4,
+        25.5,
+        26.6,
+        27.7,
+        28.8,
+        29.9,
+        30.0,
+        31.1,
+        32.2,
+        33.3,
+        34.4,
+        35.5,
+        36.6,
+    ]
+
+    controller = CRIController()
+    controller.answer_events["info_motortemp"] = threading.Event()
+    controller._parse_message(test_message)
+
+    assert controller.answer_events["info_motortemp"].is_set()
+    assert controller.robot_state.motor_temps == pytest.approx(motor_temps)

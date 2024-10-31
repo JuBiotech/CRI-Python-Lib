@@ -110,7 +110,7 @@ Most function return a bool to check whether the execution was successful.</p>
 <h3 id="typical-procedure">Typical procedure</h3>
 
 <ol>
-<li>Connect to iRC: <code>CRIController.connect(...)</code> Default IP is <code>192.168.3.11</code> with port <code>3921</code>. For using the simulation in the iRC desktop software, connect to <code>127.0.0.1</code>, most of the time the port in the simulation is <code>3921</code>, but can be different. Have a look at the log if you are unable to connect. Check whether connection was successfull via the returned bool.</li>
+<li>Connect to iRC: <code>CRIController.connect(...)</code> Default IP is <code>192.168.3.11</code> with port <code>3920</code>. For using the simulation in the iRC desktop software, connect to <code>127.0.0.1</code>, most of the time the port in the simulation is <code>3921</code>, but can be different. Have a look at the log if you are unable to connect. Check whether connection was successfull via the returned bool.</li>
 <li>If you want to control the robot, acquire active control via <code>CRIController.set_active_control(True)</code>.</li>
 <li>Enable drives with <code>CRIController.enable()</code></li>
 <li>Wait unitl axes are ready <code>CRIcontroller.wait_for_kinematics_ready()</code></li>

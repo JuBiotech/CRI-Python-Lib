@@ -291,6 +291,9 @@ class RobotState:
     )
     """error states of individual axes"""
 
+    combined_axes_error: str = "_not_ready"
+    """combined error state of all axes as string"""
+
     cycle_time: float = 0.0
     """cycle time of robot control loop"""
 
@@ -326,3 +329,9 @@ class RobotState:
 
     referencing_state: ReferencingState = field(default_factory=ReferencingState)
     """individual referencing state of all axes"""
+
+    board_temps: list[float] = field(default_factory=lambda: [0.0] * 16)
+    """Temperatures of motor controller PCBs"""
+
+    motor_temps: list[float] = field(default_factory=lambda: [0.0] * 16)
+    """Temperatures of motors"""

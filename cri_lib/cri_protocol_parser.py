@@ -216,11 +216,13 @@ class CRIProtocolParser:
                     segment_start_idx += 17
 
                 case "ERROR":
-                    # TODO: error state string
                     errors = []
+                    self.robot_state.combined_axes_error = parameters[
+                        segment_start_idx + 1
+                    ]
                     for axis_idx in range(16):
                         value_int = int(
-                            parameters[segment_start_idx + 2 + axis_idx], base=16
+                            parameters[segment_start_idx + 2 + axis_idx], base=10
                         )
                         error_bits = []
                         for i in range(8):
@@ -576,6 +578,20 @@ class CRIProtocolParser:
                 self.robot_state.referencing_state = ref_state
 
             return "info_referencing"
+        elif parameters[0] == "BoardTemp":
+            temperatures = [float(param) for param in parameters[1:]]
+
+            with self.robot_state_lock:
+                self.robot_state.board_temps = temperatures
+
+            return "info_boardtemp"
+        elif parameters[0] == "MotorTemp":
+            temperatures = [float(param) for param in parameters[1:]]
+
+            with self.robot_state_lock:
+                self.robot_state.motor_temps = temperatures
+
+            return "info_motortemp"
         else:
             return None
 
