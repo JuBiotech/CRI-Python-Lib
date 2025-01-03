@@ -43,6 +43,9 @@ Most function return a bool to check whether the execution was successful.
 6. Diable drives with `CRIController.disable()`
 7. Close connection with `CRIController.close()`
 
+### Robot State
+The robot state is continuously sent to the computer by the iRC/ReBeL. It gets received and parsed by a background thread of the library and can be accessed via `CRIController.robot_state` which always holds the last updated state. For descriptions of the field of the robot state please refer to the HTML docs.
+
 ## Examples
 See `examples` directory.
 
