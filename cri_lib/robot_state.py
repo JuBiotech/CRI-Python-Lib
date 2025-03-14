@@ -28,6 +28,7 @@ class KinematicsState(Enum):
     VIRTUAL_BOX4 = 34
     VIRTUAL_BOX5 = 35
     MOTION_NOT_ALLOWED = 99
+    UNKNOWN = 98           #added this due to 98 error occured
 
 
 class OperationMode(Enum):

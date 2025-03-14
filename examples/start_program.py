@@ -6,26 +6,26 @@ from cri_lib import CRIController
 controller = CRIController()
 
 #connect to default iRC IP
-#if not controller.connect("127.0.0.1", 3921):
-if not controller.connect("192.168.3.11"):
+if not controller.connect("127.0.0.1", 3921):
+#if not controller.connect("192.168.3.11"):
     print("Unable to connect")
     quit()
 
 #acquire active control.
 controller.set_active_control(True)
 
-print("enable")
+print("Enabling motors...")
 #enable motors
 controller.enable()
 
-print("waiting")
+print("Waiting for kinematics to be ready...")
 #wait until kinematics are ready to move
 controller.wait_for_kinematics_ready(10)
 
 controller.set_override(50.0)
 
 print("Load program")
-if not controller.load_programm("ReBeL_6DOF_01_Tischtest.xml"):
+if not controller.load_programm("ReBeL_MoveToZero.xml"):
     print("unable to load programm")
     controller.disable()
     controller.close()
