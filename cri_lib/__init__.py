@@ -2,7 +2,6 @@
 .. include:: ../README.md
 """
 
-
 from .robot_state import (
     RobotMode,
     KinematicsState,
