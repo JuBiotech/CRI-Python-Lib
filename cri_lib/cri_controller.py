@@ -13,6 +13,7 @@ from .cri_protocol_parser import CRIProtocolParser
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
 
+logger = logging.getLogger(__name__)  # Retrieves the logger from __init__.py
 
 class CRIController:
     """
@@ -31,6 +32,10 @@ class CRIController:
         CartBase = "CartBase"
         CartTool = "CartTool"
         Platform = "Platform"
+
+    def new_test_function():
+        return "Hello from CRI-Lib"
+
 
     def __init__(self):
         self.robot_state: RobotState = RobotState()
@@ -96,7 +101,7 @@ class CRIController:
         try:
             ip = socket.gethostbyname(host)
             self.sock.connect((ip, port))
-            logging.debug("\t Robot connected: %s:%d", host, port)
+            logger.debug("\t Robot connected: %s:%d", host, port)
             self.connected = True
 
             # Start receiving commands
@@ -108,12 +113,12 @@ class CRIController:
             return True
 
         except ConnectionRefusedError:
-            logging.error(
+            logger.error(
                 f"Connection refused: Unable to connect to {self.ip_address}:{self.port}"
             )
             return False
         except Exception as e:
-            logging.error(f"An error occurred: {str(e)}")
+            logger.error(f"An error occurred: {str(e)}")
             return False
 
     def close(self) -> None:
@@ -160,7 +165,7 @@ class CRIController:
 
         """
         if not self.connected:
-            logging.error("Not connected. Use connect() to establish a connection.")
+            logger.error("Not connected. Use connect() to establish a connection.")
             raise CRIConnectionError(
                 "Not connected. Use connect() to establish a connection."
             )
@@ -185,12 +190,12 @@ class CRIController:
         try:
             with self.socket_write_lock:
                 self.sock.sendall(message.encode())
-            logging.debug("Sent command: %s", message)
+            logger.debug("Sent command: %s", message)
 
             return command_counter
 
         except Exception as e:
-            logging.error(f"Failed to send command: {str(e)}")
+            logger.error(f"Failed to send command: {str(e)}")
             if register_answer:
                 with self.answer_events_lock:
                     if fixed_answer_name is not None:
@@ -213,7 +218,7 @@ class CRIController:
                 command = "ALIVEJOG 0 0 0 0 0 0 0 0 0"
 
             if self._send_command(command) is None:
-                logging.error("AliveJog Thread: Connection lost.")
+                logger.error("AliveJog Thread: Connection lost.")
                 self.connected = False
                 return
 
@@ -233,7 +238,7 @@ class CRIController:
 
             if recv_buffer == b"":
                 self.connected = False
-                logging.error("Receive Thread: Connection lost.")
+                logger.error("Receive Thread: Connection lost.")
                 return
 
             message_buffer.extend(recv_buffer)
@@ -309,7 +314,7 @@ class CRIController:
     def _parse_message(self, message: str) -> None:
         """Internal function to parse a message. If an answer event is registered for a certain msg_id it is triggered."""
         if "STATUS" not in message:
-            logging.debug("Received: %s", message)
+            logger.debug("Received: %s", message)
 
         if (notification := self.parser.parse_message(message)) is not None:
             if notification["answer"] == "status" and self.status_callback is not None:
@@ -372,7 +377,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in RESET command: %s", error_msg)
+                logger.debug("Error in RESET command: %s", error_msg)
                 return False
             else:
                 return True
@@ -395,7 +400,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in ENABLE command: %s", error_msg)
+                logger.debug("Error in ENABLE command: %s", error_msg)
                 return False
             else:
                 return True
@@ -417,7 +422,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in DISABLE command: %s", error_msg)
+                logger.debug("Error in DISABLE command: %s", error_msg)
                 return False
             else:
                 return True
@@ -446,7 +451,7 @@ class CRIController:
                     f"Active_{str(active).lower()}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in set active control command: %s", error_msg)
+                logger.debug("Error in set active control command: %s", error_msg)
                 return False
             else:
                 return True
@@ -469,7 +474,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in SetJointsToZero command: %s", error_msg)
+                logger.debug("Error in SetJointsToZero command: %s", error_msg)
                 return False
             else:
                 return True
@@ -490,7 +495,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in ReferenceAllJoints command: %s", error_msg)
+                logger.debug("Error in ReferenceAllJoints command: %s", error_msg)
                 return False
             else:
                 return True
@@ -525,7 +530,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in ReferenceSingleJoint command: %s", error_msg)
+                logger.debug("Error in ReferenceSingleJoint command: %s", error_msg)
                 return False
             else:
                 return True
@@ -550,7 +555,7 @@ class CRIController:
                     "info_referencing", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in GetReferencingInfo command: %s", error_msg)
+                logger.debug("Error in GetReferencingInfo command: %s", error_msg)
                 return False
             else:
                 return True
@@ -625,7 +630,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in Move Joints command: %s", error_msg)
+                logger.debug("Error in Move Joints command: %s", error_msg)
                 return False
 
             if wait_move_finished:
@@ -634,7 +639,7 @@ class CRIController:
                         "EXECEND", timeout=move_finished_timeout
                     )
                 ) is not None:
-                    logging.debug("Exec Error in Move Joints command: %s", error_msg)
+                    logger.debug("Exec Error in Move Joints command: %s", error_msg)
                     return False
 
             return True
@@ -681,7 +686,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in Move Joints command: %s", error_msg)
+                logger.debug("Error in Move Joints command: %s", error_msg)
                 return False
 
             if wait_move_finished:
@@ -690,7 +695,7 @@ class CRIController:
                         "EXECEND", timeout=move_finished_timeout
                     )
                 ) is not None:
-                    logging.debug(
+                    logger.debug(
                         "Exec Error in Move Joints Relative command: %s", error_msg
                     )
                     return False
@@ -746,7 +751,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in Move Joints command: %s", error_msg)
+                logger.debug("Error in Move Joints command: %s", error_msg)
                 return False
 
             if wait_move_finished:
@@ -755,7 +760,7 @@ class CRIController:
                         "EXECEND", timeout=move_finished_timeout
                     )
                 ) is not None:
-                    logging.debug("Exec Error in Move Cartesian command: %s", error_msg)
+                    logger.debug("Exec Error in Move Cartesian command: %s", error_msg)
                     return False
 
             return True
@@ -808,7 +813,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in Move Joints command: %s", error_msg)
+                logger.debug("Error in Move Joints command: %s", error_msg)
                 return False
 
             if wait_move_finished:
@@ -817,7 +822,7 @@ class CRIController:
                         "EXECEND", timeout=move_finished_timeout
                     )
                 ) is not None:
-                    logging.debug(
+                    logger.debug(
                         "Exec Error in Move BaseRelative command: %s", error_msg
                     )
                     return False
@@ -872,7 +877,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
             ) is not None:
-                logging.debug("Error in Move Joints command: %s", error_msg)
+                logger.debug("Error in Move Joints command: %s", error_msg)
                 return False
 
             if wait_move_finished:
@@ -881,7 +886,7 @@ class CRIController:
                         "EXECEND", timeout=move_finished_timeout
                     )
                 ) is not None:
-                    logging.debug("Exec Error in Move BaseTool command: %s", error_msg)
+                    logger.debug("Exec Error in Move BaseTool command: %s", error_msg)
                     return False
 
             return True
@@ -903,7 +908,7 @@ class CRIController:
             if (
                 error_msg := self._wait_for_answer(f"{msg_id}", timeout=5.0)
             ) is not None:
-                logging.debug("Error in Move Stop command: %s", error_msg)
+                logger.debug("Error in Move Stop command: %s", error_msg)
                 return False
             else:
                 return True
@@ -986,7 +991,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in MotionType command: %s", error_msg)
+                logger.debug("Error in MotionType command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1015,7 +1020,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in Override command: %s", error_msg)
+                logger.debug("Error in Override command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1050,7 +1055,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in DOUT command: %s", error_msg)
+                logger.debug("Error in DOUT command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1085,7 +1090,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in DIN command: %s", error_msg)
+                logger.debug("Error in DIN command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1120,7 +1125,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in DIN command: %s", error_msg)
+                logger.debug("Error in DIN command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1149,7 +1154,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in load_program command: %s", error_msg)
+                logger.debug("Error in load_program command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1178,7 +1183,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in load_logic_program command: %s", error_msg)
+                logger.debug("Error in load_logic_program command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1202,7 +1207,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in start_program command: %s", error_msg)
+                logger.debug("Error in start_program command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1226,7 +1231,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in stop_program command: %s", error_msg)
+                logger.debug("Error in stop_program command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1250,7 +1255,7 @@ class CRIController:
                     f"{msg_id}", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in pause_program command: %s", error_msg)
+                logger.debug("Error in pause_program command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1286,11 +1291,11 @@ class CRIController:
             with open(file_path, "r") as fp:
                 lines = []
                 while line := fp.readline():
-                    print(line)
+                    logger.debug(line)
                     lines.append(line)
 
         except OSError as e:
-            logging.error("Error reading %s: %s", str(Path), str(e))
+            logger.error("Error reading %s: %s", str(Path), str(e))
             return False
 
         command = f"CMD UploadFileInit {target_directory + '/' + str(file_path.name)} {len(lines)} 0"
@@ -1338,7 +1343,7 @@ class CRIController:
             data for CAN message always 8 bytes
         """
         if not self.can_mode:
-            logging.debug("can_send: CAN mode not enabled")
+            logger.debug("can_send: CAN mode not enabled")
             return
 
         command = f"CANBridge Msg ID {msg_id} Len {length} Data " + " ".join(
@@ -1358,7 +1363,7 @@ class CRIController:
             Returns a tuple of (msg_id, length, data) if a message was received or None if nothing was received within the timeout.
         """
         if not self.can_mode:
-            logging.debug("can_receive: CAN mode not enabled")
+            logger.debug("can_receive: CAN mode not enabled")
             return
 
         try:
@@ -1388,7 +1393,7 @@ class CRIController:
                     "info_boardtemp", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in GetBoardTemp command: %s", error_msg)
+                logger.debug("Error in GetBoardTemp command: %s", error_msg)
                 return False
             else:
                 return True
@@ -1415,7 +1420,7 @@ class CRIController:
                     "info_motortemp", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
-                logging.debug("Error in GetMotorTemp command: %s", error_msg)
+                logger.debug("Error in GetMotorTemp command: %s", error_msg)
                 return False
             else:
                 return True

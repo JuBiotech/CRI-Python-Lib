@@ -18,6 +18,8 @@ from .robot_state import (
     ReferencingAxisState,
 )
 
+# Retrieve logger instance for this module
+logger = logging.getLogger(__name__)
 
 class CRIProtocolParser:
     """Class handling the parsing of CRI messages to the robot state."""
@@ -99,7 +101,7 @@ class CRIProtocolParser:
                 return self._parse_execerror(parts[3:-1])
 
             case _:
-                logging.debug(
+                logger.debug(
                     "Unknown message type %s received:\n%s", parts[2], " ".join(parts)
                 )
                 return None
@@ -274,7 +276,7 @@ class CRIProtocolParser:
                     segment_start_idx += 8
 
                 case _:
-                    logging.debug(
+                    logger.debug(
                         "Unknown segment in status message: %s",
                         parameters[segment_start_idx],
                     )
@@ -353,7 +355,7 @@ class CRIProtocolParser:
                 variables[parameters[idx + 1]] = PosVariable(*values)
                 idx += 17
             else:
-                logging.debug(
+                logger.debug(
                     "Unknown variable type in VARIABLES message: %s", parameters[idx]
                 )
                 idx += 1
@@ -401,7 +403,7 @@ class CRIProtocolParser:
                     self.robot_state.active_control = False
                 return "Active_false"
             else:
-                logging.debug("Unknown Active state: %s", parameters[1])
+                logger.debug("Unknown Active state: %s", parameters[1])
 
         return None
 
@@ -453,7 +455,7 @@ class CRIProtocolParser:
                     self.robot_state.gripper_type = gripper
 
         else:
-            logging.debug("MESSAGE: %s", " ".join(parameters))
+            logger.debug("MESSAGE: %s", " ".join(parameters))
 
     def _parse_can_bridge(self, parameters: list[str]) -> dict[str, any] | None:
         """Parses a can bridge message.
