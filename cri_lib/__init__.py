@@ -2,13 +2,6 @@
 .. include:: ../README.md
 """
 
-import logging
-
-# Create a logger for the package
-logger = logging.getLogger(__name__)
-logger.info("cri_lib package initialized")
-
-
 from .robot_state import (
     RobotMode,
     KinematicsState,

@@ -18,7 +18,6 @@ from .robot_state import (
     ReferencingAxisState,
 )
 
-# Retrieve logger instance for this module
 logger = logging.getLogger(__name__)
 
 class CRIProtocolParser:

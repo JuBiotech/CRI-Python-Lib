@@ -1,6 +1,5 @@
 import logging
 
-# Retrieve logger instance for this module
 logger = logging.getLogger(__name__)
 
 class CRIError(Exception):

@@ -13,7 +13,7 @@ from .cri_protocol_parser import CRIProtocolParser
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
 
-logger = logging.getLogger(__name__)  # Logger name will be "cri_lib.cri_controller" when imported
+logger = logging.getLogger(__name__) 
 
 class CRIController:
     """
