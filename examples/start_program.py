@@ -3,8 +3,9 @@ from time import sleep
 
 from cri_lib import CRIController
 
+# 🔹 Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("start_program")  # same changed the __main__ to start_program so that the logs would appear clear
+logger = logging.getLogger(__name__)
 # CRIController is the main interface for controlling the iRC
 controller = CRIController()
 

@@ -19,8 +19,6 @@ class CRIController:
     """
     Class implementing the CRI network protocol for igus Robot Control.
     """
-    def __init__(self):
-        logger.info("Initializing CRIController")
 
     ALIVE_JOG_INTERVAL_SEC = 0.2
     ACTIVE_JOG_INTERVAL_SEC = 0.02

@@ -4,8 +4,9 @@ from cri_lib import CRIController
 from cri_lib.robot_state import KinematicsState  # Ensure KinematicsState is imported
 from cri_lib.robot_state import OperationMode
 
+# 🔹 Configure logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)  # Retrieves the logger from __init__.py
+logger = logging.getLogger(__name__)
 
 # Creating an instance
 controller = CRIController()

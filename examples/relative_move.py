@@ -1,14 +1,13 @@
 import logging
 from cri_lib import CRIController
 
-# 🔹 Configure logging (this script is an entry point)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("relative_move")  # here i am changing the name to relative_move so that it shows in log messages.
+# 🔹 Configure logging
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # CRIController is the main interface for controlling the iRC
 controller = CRIController()
 
-logger.info("Attempting to connect to CRI server at 127.0.0.1:3921...")
 # Connect to default iRC IP
 # controller.connect("192.168.3.11")
 if not controller.connect("127.0.0.1", 3921):

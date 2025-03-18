@@ -1,12 +1,5 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
 class CRIError(Exception):
     """Base class for CRI-related errors."""
-    def __init__(self, message="An error occurred in CRI"):
-        self.message = message
-        super().__init__(self.message)
 
 class CRIConnectionError(CRIError):
     """Raised when there is a connection error."""
