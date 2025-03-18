@@ -4,12 +4,6 @@
 
 import logging
 
-# Configure logging for the cri_lib package
-logging.basicConfig(
-    level=logging.DEBUG,  # Keep to DEBUG if you want more detailed logs
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
 # Create a logger for the package
 logger = logging.getLogger(__name__)
 logger.info("cri_lib package initialized")

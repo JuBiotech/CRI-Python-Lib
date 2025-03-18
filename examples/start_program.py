@@ -3,15 +3,15 @@ from time import sleep
 
 from cri_lib import CRIController
 
-logger = logging.getLogger(__name__)  # Retrieves the logger from __init__.py
-
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("start_program")  # same changed the __main__ to start_program so that the logs would appear clear
 # CRIController is the main interface for controlling the iRC
 controller = CRIController()
 
 #connect to default iRC IP
 if not controller.connect("127.0.0.1", 3921):
 #if not controller.connect("192.168.3.11"):
-    logger.info("Unable to connect")
+    logger.error("Unable to connect")
     quit()
 
 #acquire active control.
@@ -29,14 +29,14 @@ controller.set_override(50.0)
 
 logger.info("Load program")
 if not controller.load_programm("ReBeL_MoveToZero.xml"):
-    logger.info("unable to load programm")
+    logger.error("unable to load programm")
     controller.disable()
     controller.close()
     quit()
 
 logger.info("Start program")
 if not controller.start_programm():
-    logger.info("Unable to start programm")
+    logger.error("Unable to start programm")
     controller.disable()
     controller.close()
     quit()
@@ -45,7 +45,7 @@ sleep(5)
 
 logger.info("Pause program")
 if not controller.pause_programm():
-    logger.info("Unable to pause programm")
+    logger.error("Unable to pause programm")
     controller.disable()
     controller.close()
     quit()
@@ -54,7 +54,7 @@ sleep(5)
 
 logger.info("Start programm again")
 if not controller.start_programm():
-    logger.info("Unable to start programm")
+    logger.error("Unable to start programm")
     controller.disable()
     controller.close()
     quit()
@@ -63,7 +63,7 @@ sleep(5)
 
 logger.info("Stop program")
 if not controller.stop_programm():
-    logger.info("Unable to stop programm")
+    logger.error("Unable to stop programm")
     controller.disable()
     controller.close()
     quit()

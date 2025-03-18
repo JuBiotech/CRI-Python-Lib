@@ -13,12 +13,14 @@ from .cri_protocol_parser import CRIProtocolParser
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
 
-logger = logging.getLogger(__name__)  # Retrieves the logger from __init__.py
+logger = logging.getLogger(__name__)  # Logger name will be "cri_lib.cri_controller" when imported
 
 class CRIController:
     """
     Class implementing the CRI network protocol for igus Robot Control.
     """
+    def __init__(self):
+        logger.info("Initializing CRIController")
 
     ALIVE_JOG_INTERVAL_SEC = 0.2
     ACTIVE_JOG_INTERVAL_SEC = 0.02
@@ -32,10 +34,6 @@ class CRIController:
         CartBase = "CartBase"
         CartTool = "CartTool"
         Platform = "Platform"
-
-    def new_test_function():
-        return "Hello from CRI-Lib"
-
 
     def __init__(self):
         self.robot_state: RobotState = RobotState()
@@ -114,11 +112,11 @@ class CRIController:
 
         except ConnectionRefusedError:
             logger.error(
-                f"Connection refused: Unable to connect to {self.ip_address}:{self.port}"
+                "Connection refused: Unable to connect to %s:%i", self.ip_address, self.port
             )
             return False
         except Exception as e:
-            logger.error(f"An error occurred: {str(e)}")
+            logger.exception("An error occurred while attempting to connect.")
             return False
 
     def close(self) -> None:
@@ -195,7 +193,7 @@ class CRIController:
             return command_counter
 
         except Exception as e:
-            logger.error(f"Failed to send command: {str(e)}")
+            logger.exception("Failed to send command.")
             if register_answer:
                 with self.answer_events_lock:
                     if fixed_answer_name is not None:
