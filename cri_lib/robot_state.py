@@ -28,7 +28,7 @@ class KinematicsState(Enum):
     VIRTUAL_BOX4 = 34
     VIRTUAL_BOX5 = 35
     MOTION_NOT_ALLOWED = 99
-
+    UNKNOWN = 98  # Added this line to handle the unknown kinematics state
 
 class OperationMode(Enum):
     """Enum of possible operartion modes"""
