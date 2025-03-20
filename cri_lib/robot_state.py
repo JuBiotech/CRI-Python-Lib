@@ -80,6 +80,9 @@ class RobotCartesianPosition:
     A: float = 0.0
     B: float = 0.0
     C: float = 0.0
+    E1: float = 0.0  # End-effector position 1 (e.g., gripper or tool)
+    E2: float = 0.0  # End-effector position 2
+    E3: float = 0.0  # End-effector position 3
 
 
 @dataclass
