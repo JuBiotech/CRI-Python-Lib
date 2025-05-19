@@ -112,8 +112,8 @@ class CRIController:
         except ConnectionRefusedError:
             logger.error(
                 "Connection refused: Unable to connect to %s:%i",
-                self.ip_address,
-                self.port,
+                host,
+                port,
             )
             return False
         except Exception as e:
