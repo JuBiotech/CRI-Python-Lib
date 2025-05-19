@@ -13,7 +13,8 @@ from .cri_protocol_parser import CRIProtocolParser
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
 
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
+
 
 class CRIController:
     """
@@ -110,7 +111,9 @@ class CRIController:
 
         except ConnectionRefusedError:
             logger.error(
-                "Connection refused: Unable to connect to %s:%i", self.ip_address, self.port
+                "Connection refused: Unable to connect to %s:%i",
+                self.ip_address,
+                self.port,
             )
             return False
         except Exception as e:
@@ -598,6 +601,7 @@ class CRIController:
         velocity: float,
         wait_move_finished: bool = False,
         move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
     ) -> bool:
         """Absolute joint move
 
@@ -615,10 +619,22 @@ class CRIController:
 
         move_finished_timeout : float
             timout in seconds for waiting for the move to finish, `None` will wait indefinetly
+
+        acceleration : float | None
+            optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
+            requires igus Robot Control version >= V14-004-1 on robot controller
         """
         command = (
             f"CMD Move Joint {A1} {A2} {A3} {A4} {A5} {A6} {E1} {E2} {E3} {velocity}"
         )
+
+        if (
+            (acceleration is not None)
+            and (acceleration >= 0.0)
+            and (acceleration <= 100.0)
+        ):
+            command = f"{command} {acceleration}"
+
         if wait_move_finished:
             self._register_answer("EXECEND")
 
@@ -657,6 +673,7 @@ class CRIController:
         velocity: float,
         wait_move_finished: bool = False,
         move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
     ) -> bool:
         """Relative joint move
         Parameters
@@ -673,8 +690,20 @@ class CRIController:
 
         move_finished_timeout : float
             timout in seconds for waiting for the move to finish, `None` will wait indefinetly
+
+        acceleration : float | None
+            optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
+            requires igus Robot Control version >= V14-004-1 on robot controller
         """
         command = f"CMD Move RelativeJoint {A1} {A2} {A3} {A4} {A5} {A6} {E1} {E2} {E3} {velocity}"
+
+        if (
+            (acceleration is not None)
+            and (acceleration >= 0.0)
+            and (acceleration <= 100.0)
+        ):
+            command = f"{command} {acceleration}"
+
         if wait_move_finished:
             self._register_answer("EXECEND")
 
@@ -716,6 +745,7 @@ class CRIController:
         frame: str = "#base",
         wait_move_finished: bool = False,
         move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
     ) -> bool:
         """Cartesian move
         Parameters
@@ -735,10 +765,21 @@ class CRIController:
 
         move_finished_timeout : float
             timout in seconds for waiting for the move to finish, `None` will wait indefinetly
+
+        acceleration : float | None
+            optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
+            requires igus Robot Control version >= V14-004-1 on robot controller
         """
         command = (
             f"CMD Move Cart {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity} {frame}"
         )
+
+        if (
+            (acceleration is not None)
+            and (acceleration >= 0.0)
+            and (acceleration <= 100.0)
+        ):
+            command = f"{command} {acceleration}"
 
         if wait_move_finished:
             self._register_answer("EXECEND")
@@ -778,6 +819,7 @@ class CRIController:
         velocity: float,
         wait_move_finished: bool = False,
         move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in base coordinate system
         Parameters
@@ -797,10 +839,21 @@ class CRIController:
 
         move_finished_timeout : float
             timout in seconds for waiting for the move to finish, `None` will wait indefinetly
+
+        acceleration : float | None
+            optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
+            requires igus Robot Control version >= V14-004-1 on robot controller
         """
         command = (
             f"CMD Move RelativeBase {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity}"
         )
+
+        if (
+            (acceleration is not None)
+            and (acceleration >= 0.0)
+            and (acceleration <= 100.0)
+        ):
+            command = f"{command} {acceleration}"
 
         if wait_move_finished:
             self._register_answer("EXECEND")
@@ -842,6 +895,7 @@ class CRIController:
         velocity: float,
         wait_move_finished: bool = False,
         move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in tool coordinate system
         Parameters
@@ -861,10 +915,21 @@ class CRIController:
 
         move_finished_timeout : float
             timout in seconds for waiting for the move to finish, `None` will wait indefinetly
+
+        acceleration : float | None
+            optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
+            requires igus Robot Control version >= V14-004-1 on robot controller
         """
         command = (
             f"CMD Move RelativeTool {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity}"
         )
+
+        if (
+            (acceleration is not None)
+            and (acceleration >= 0.0)
+            and (acceleration <= 100.0)
+        ):
+            command = f"{command} {acceleration}"
 
         if wait_move_finished:
             self._register_answer("EXECEND")
@@ -1369,16 +1434,18 @@ class CRIController:
 
         return item
 
-    def get_board_temperatures(self, blocking: bool = True, timeout: float | None = None) -> bool:
+    def get_board_temperatures(
+        self, blocking: bool = True, timeout: float | None = None
+    ) -> bool:
         """Receive motor controller PCB temperatures and save in robot state
 
-            Parameters
-            ----------
-            blocking: bool
-                wait for response, always returns True if not waiting
-            
-            timeout: float | None
-                timeout for waiting in seconds or None for infinite waiting
+        Parameters
+        ----------
+        blocking: bool
+            wait for response, always returns True if not waiting
+
+        timeout: float | None
+            timeout for waiting in seconds or None for infinite waiting
         """
         if (
             self._send_command("SYSTEM GetBoardTemp", True, "info_boardtemp")
@@ -1395,17 +1462,19 @@ class CRIController:
                 return True
         else:
             return False
-        
-    def get_motor_temperatures(self, blocking: bool = True, timeout: float | None = None) -> bool:
+
+    def get_motor_temperatures(
+        self, blocking: bool = True, timeout: float | None = None
+    ) -> bool:
         """Receive motor temperatures and save in robot state
 
-            Parameters
-            ----------
-            blocking: bool
-                wait for response, always returns True if not waiting
-            
-            timeout: float | None
-                timeout for waiting in seconds or None for infinite waiting
+        Parameters
+        ----------
+        blocking: bool
+            wait for response, always returns True if not waiting
+
+        timeout: float | None
+            timeout for waiting in seconds or None for infinite waiting
         """
         if (
             self._send_command("SYSTEM GetMotorTemp", True, "info_motortemp")
