@@ -2,23 +2,24 @@ import logging
 from threading import Lock
 
 from .robot_state import (
+    ErrorStates,
+    JointsState,
     KinematicsState,
+    OperationInfo,
     OperationMode,
+    PlatformCartesianPosition,
+    PosVariable,
+    ReferencingAxisState,
+    ReferencingState,
+    ReplayMode,
+    RobotCartesianPosition,
+    RobotMode,
     RobotState,
     RunState,
-    ReplayMode,
-    RobotMode,
-    JointsState,
-    RobotCartesianPosition,
-    PlatformCartesianPosition,
-    ErrorStates,
-    PosVariable,
-    OperationInfo,
-    ReferencingState,
-    ReferencingAxisState,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class CRIProtocolParser:
     """Class handling the parsing of CRI messages to the robot state."""

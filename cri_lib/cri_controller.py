@@ -1,17 +1,15 @@
-from enum import Enum
 import logging
 import socket
 import threading
-from time import sleep, time
+from enum import Enum
 from pathlib import Path
+from queue import Empty, Queue
+from time import sleep, time
 from typing import Callable
-from queue import Queue, Empty
-
-from .robot_state import RobotState, KinematicsState
-
-from .cri_protocol_parser import CRIProtocolParser
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
+from .cri_protocol_parser import CRIProtocolParser
+from .robot_state import KinematicsState, RobotState
 
 logger = logging.getLogger(__name__)
 
