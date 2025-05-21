@@ -1,5 +1,6 @@
 import logging
 from threading import Lock
+from typing import Any, Sequence
 
 from .robot_state import (
     ErrorStates,
@@ -28,7 +29,9 @@ class CRIProtocolParser:
         self.robot_state = robot_state
         self.robot_state_lock = robot_state_lock
 
-    def parse_message(self, message: str) -> str | None:
+    def parse_message(
+        self, message: str
+    ) -> dict[str, str] | dict[str, str | None] | None:
         """Parses a message to the RobotState of the class.
         Parameters:
         -----------
@@ -332,7 +335,7 @@ class CRIProtocolParser:
         with self.robot_state_lock:
             self.robot_state.gripper_state = float(parameters[0])
 
-    def _parse_variables(self, parameters: list[str]) -> None:
+    def _parse_variables(self, parameters: Sequence[str]) -> None:
         """
         Parses a variables message to the robot state.
 
@@ -341,7 +344,7 @@ class CRIProtocolParser:
             parameters: list[str]
                 List of splitted strings between `VARIABLES` and `CRIEND`
         """
-        variables = {}
+        variables: dict[str, float | PosVariable] = {}
         idx = 0
 
         while idx < len(parameters):
@@ -363,7 +366,7 @@ class CRIProtocolParser:
         with self.robot_state_lock:
             self.robot_state.variabels = variables
 
-    def _parse_opinfo(self, parameters: list[str]) -> None:
+    def _parse_opinfo(self, parameters: Sequence[str]) -> None:
         """
         Parses a opinfo message to the robot state.
 
@@ -379,7 +382,7 @@ class CRIProtocolParser:
         with self.robot_state_lock:
             self.robot_state.operation_info = OperationInfo(*values)
 
-    def _parse_cmd(self, parameters: list[str]) -> str:
+    def _parse_cmd(self, parameters: Sequence[str]) -> str | None:
         """
         Parses a cmd message to the robot state.
 
@@ -407,7 +410,7 @@ class CRIProtocolParser:
 
         return None
 
-    def _parse_message_message(self, parameters: list[str]) -> None:
+    def _parse_message_message(self, parameters: Sequence[str]) -> None:
         """
         Parses a message message to the robot state.
 
@@ -457,7 +460,7 @@ class CRIProtocolParser:
         else:
             logger.debug("MESSAGE: %s", " ".join(parameters))
 
-    def _parse_can_bridge(self, parameters: list[str]) -> dict[str, any] | None:
+    def _parse_can_bridge(self, parameters: Sequence[str]) -> dict[str, Any] | None:
         """Parses a can bridge message.
 
         Parameters
@@ -514,7 +517,7 @@ class CRIProtocolParser:
             },
         }
 
-    def _parse_config(self, parameters: list[str]) -> None:
+    def _parse_config(self, parameters: Sequence[str]) -> None:
         """
         Parses a config message to the robot state.
 
@@ -527,7 +530,7 @@ class CRIProtocolParser:
             with self.robot_state_lock:
                 self.robot_state.project_file = parameters[1]
 
-    def _parse_cmderror(self, parameters: list[str]) -> dict[str, str]:
+    def _parse_cmderror(self, parameters: Sequence[str]) -> dict[str, str]:
         """Parses a CMDERROR message to notify calling function
 
         Parameters:
@@ -543,7 +546,7 @@ class CRIProtocolParser:
 
         return {"answer": parameters[0], "error": " ".join(parameters[1:])}
 
-    def _parse_info(self, parameters: list[str]) -> None:
+    def _parse_info(self, parameters: list[str]) -> str | None:
         """
         Parses a info message to the robot state.
 
@@ -597,7 +600,7 @@ class CRIProtocolParser:
         else:
             return None
 
-    def _parse_execerror(self, parameters: list[str]) -> dict[str, str]:
+    def _parse_execerror(self, parameters: Sequence[str]) -> dict[str, str]:
         """Parses a EXECERROR message to notify calling function
 
         Parameters:
@@ -614,7 +617,7 @@ class CRIProtocolParser:
         return {"answer": "EXECEND", "error": " ".join(parameters)}
 
     @staticmethod
-    def _split_quotes_aware(msg: str) -> list[str]:
+    def _split_quotes_aware(msg: str) -> Sequence[str]:
         """
         Splits a string at whitespaces but ignores whitespace whithin quotes.
 

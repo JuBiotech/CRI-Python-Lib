@@ -313,7 +313,7 @@ class RobotState:
     gripper_state: float = 0.0
     """current opening value of the gripper"""
 
-    variabels: dict[str : [PosVariable | float]] = field(default_factory=dict)
+    variabels: dict[str, PosVariable | float] = field(default_factory=dict)
     """variables saved in robot controller"""
 
     operation_info: OperationInfo = field(default_factory=OperationInfo)
