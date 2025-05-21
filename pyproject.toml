@@ -11,3 +11,6 @@ dependencies = []
 
 [tool.setuptools]
 packages = ["cri_lib"]
+
+[tool.isort]
+profile = "black"
