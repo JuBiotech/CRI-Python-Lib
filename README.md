@@ -1,4 +1,4 @@
-# Introduction 
+# Introduction
 Python package to interface an igus Robot Control via the CRI protocol.
 
 # Current Features
@@ -8,7 +8,7 @@ Python package to interface an igus Robot Control via the CRI protocol.
     - Enable / Disable
     - Acquisition of active control
     - Override
-- Referencing of 
+- Referencing of
     - single axis
     - all axes
     - Set joints to zero
@@ -50,5 +50,4 @@ The robot state is continuously sent to the computer by the iRC/ReBeL. It gets r
 See `examples` directory.
 
 # Tests
-This repository provides pytests for the message parser. They require `pytest` and `pytest-cov`, which can be installed via `pip install -r requirements.txt`. To run the tests (including coverage) execute the following command: `pytest -vv --cov=cri_lib --cov-report term-missing tests`. 
-
+This repository provides pytests for the message parser. They require `pytest` and `pytest-cov`, which can be installed via `pip install -r requirements.txt`. To run the tests (including coverage) execute the following command: `pytest -vv --cov=cri_lib --cov-report term-missing tests`.

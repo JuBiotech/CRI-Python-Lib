@@ -3,33 +3,33 @@ import threading
 import pytest
 
 from cri_lib import (
+    CRIController,
+    CRIProtocolParser,
+    ErrorStates,
+    JointsState,
     KinematicsState,
+    OperationInfo,
     OperationMode,
+    PlatformCartesianPosition,
+    PosVariable,
+    ReferencingAxisState,
+    ReferencingState,
+    ReplayMode,
+    RobotCartesianPosition,
+    RobotMode,
     RobotState,
     RunState,
-    ReplayMode,
-    RobotMode,
-    JointsState,
-    RobotCartesianPosition,
-    PlatformCartesianPosition,
-    ErrorStates,
-    PosVariable,
-    OperationInfo,
-    ReferencingState,
-    ReferencingAxisState,
 )
-
-from cri_lib import CRIController, CRIProtocolParser
 
 
 def test_parse_state():
     test_message = """
-CRISTART 1234 STATUS MODE joint 
+CRISTART 1234 STATUS MODE joint
 POSJOINTSETPOINT 1.00 2.00 3.00 4.00 5.00 6.00 7.00 8.00 9.00 10.00 11.00 12.00 13.00 14.00 15.00 16.00
 POSJOINTCURRENT 1.00 2.00 3.00 4.00 5.00 6.00 7.00 8.00 9.00 10.00 11.00 12.00 13.00 14.00 15.00 16.00
-POSCARTROBOT 10.0 20.0 30.0 0.00 90.00 0.00 
+POSCARTROBOT 10.0 20.0 30.0 0.00 90.00 0.00
 POSCARTPLATFORM 10.0 20.0 180.00
-OVERRIDE 80.0 
+OVERRIDE 80.0
 DIN 0000000000000FF00 DOUT 0000000000000FF00
 ESTOP 3 SUPPLY 23000 CURRENTALL 2600
 CURRENTJOINTS 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160
@@ -224,16 +224,16 @@ def test_parse_unknown_message_tpye():
 
 def test_parse_variables():
     """Test for variable message"""
-    test_message = """CRISTART 7 VARIABLES 
-    ValuePosVariable #position 217.395 0 350.155 180 3.57994e-05 180 0 -20 110 0 90 0 0 0 0 
-    ValueNrVariable #programrunning 0 
-    ValueNrVariable #logicprogramrunning 0 
-    ValueNrVariable #parts-good 0 
-    ValueNrVariable #parts-bad 0 
-    ValuePosVariable #userframe-a 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 
-    ValuePosVariable #userframe-b 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 
-    ValuePosVariable #userframe-c 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 
-    ValuePosVariable #position-userframe 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0 
+    test_message = """CRISTART 7 VARIABLES
+    ValuePosVariable #position 217.395 0 350.155 180 3.57994e-05 180 0 -20 110 0 90 0 0 0 0
+    ValueNrVariable #programrunning 0
+    ValueNrVariable #logicprogramrunning 0
+    ValueNrVariable #parts-good 0
+    ValueNrVariable #parts-bad 0
+    ValuePosVariable #userframe-a 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0
+    ValuePosVariable #userframe-b 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0
+    ValuePosVariable #userframe-c 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0
+    ValuePosVariable #position-userframe 4.0 5.0 6.0 7.0 8.0 9.0 10.0 11.0 12.0 13.0 14.0 15.0 16.0 17.0 18.0
     FooVariableType sdgsdsd 1 2 3 4 CRIEND"""
 
     variables = {
@@ -559,6 +559,7 @@ def test_info_boardtemps():
 
     assert controller.answer_events["info_boardtemp"].is_set()
     assert controller.robot_state.board_temps == pytest.approx(board_temps)
+
 
 def test_info_motortemps():
     test_message = "CRISTART 6789 INFO MotorTemp 21.1 22.2 23.3 24.4 25.5 26.6 27.7 28.8 29.9 30.0 31.1 32.2 33.3 34.4 35.5 36.6 CRIEND"

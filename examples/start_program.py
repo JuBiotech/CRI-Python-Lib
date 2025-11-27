@@ -4,26 +4,28 @@ from time import sleep
 from cri_lib import CRIController
 
 # 🔹 Configure logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 # CRIController is the main interface for controlling the iRC
 controller = CRIController()
 
-#connect to default iRC IP
-#if not controller.connect("127.0.0.1", 3921):
+# connect to default iRC IP
+# if not controller.connect("127.0.0.1", 3921):
 if not controller.connect("192.168.3.11"):
     logger.error("Unable to connect")
     quit()
 
-#acquire active control.
+# acquire active control.
 controller.set_active_control(True)
 
 logger.info("Enabling motors...")
-#enable motors
+# enable motors
 controller.enable()
 
 logger.info("Waiting for kinematics to be ready...")
-#wait until kinematics are ready to move
+# wait until kinematics are ready to move
 controller.wait_for_kinematics_ready(10)
 
 controller.set_override(50.0)
@@ -69,6 +71,6 @@ if not controller.stop_programm():
     controller.close()
     quit()
 
-#Disable motors and disconnect
+# Disable motors and disconnect
 controller.disable()
 controller.close()
