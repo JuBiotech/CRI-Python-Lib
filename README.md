@@ -51,4 +51,4 @@ See `examples` directory.
 
 # Tests
 This repository provides pytests for the message parser. They require `pytest` and `pytest-cov`, which can be installed via `pip install -r requirements.txt`. To run the tests (including coverage) execute the following command: `pytest -vv --cov=cri_lib --cov-report term-missing tests`.
-Runs as pre-commit.
+Runs as pre-commit Github action.
