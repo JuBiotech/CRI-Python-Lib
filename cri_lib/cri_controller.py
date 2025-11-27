@@ -1,17 +1,15 @@
-from enum import Enum
 import logging
 import socket
 import threading
-from time import sleep, time
+from enum import Enum
 from pathlib import Path
-from typing import Callable
-from queue import Queue, Empty
-
-from .robot_state import RobotState, KinematicsState
-
-from .cri_protocol_parser import CRIProtocolParser
+from queue import Empty, Queue
+from time import sleep, time
+from typing import Any, Callable
 
 from .cri_errors import CRICommandTimeOutError, CRIConnectionError
+from .cri_protocol_parser import CRIProtocolParser
+from .robot_state import KinematicsState, RobotState
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +32,14 @@ class CRIController:
         CartTool = "CartTool"
         Platform = "Platform"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.robot_state: RobotState = RobotState()
         self.robot_state_lock = threading.Lock()
 
         self.parser = CRIProtocolParser(self.robot_state, self.robot_state_lock)
 
         self.connected = False
-        self.sock = None
+        self.sock: socket.socket | None = None
         self.socket_write_lock = threading.Lock()
 
         self.can_mode: bool = False
@@ -58,7 +56,7 @@ class CRIController:
         self.answer_events: dict[str, threading.Event] = {}
         self.error_messages: dict[str, str] = {}
 
-        self.status_callback = None
+        self.status_callback: Callable | None = None
 
         self.live_jog_active: bool = False
         self.jog_intervall = self.ALIVE_JOG_INTERVAL_SEC
@@ -125,7 +123,7 @@ class CRIController:
         Close network connection. Might block for a while waiting for the threads to finish.
         """
 
-        if not self.connected:
+        if not self.connected or self.sock is None:
             return
 
         self._send_command("QUIT")
@@ -163,7 +161,7 @@ class CRIController:
             If the command was sent the message_id gets returned or None if there was an error.
 
         """
-        if not self.connected:
+        if not self.connected or self.sock is None:
             logger.error("Not connected. Use connect() to establish a connection.")
             raise CRIConnectionError(
                 "Not connected. Use connect() to establish a connection."
@@ -208,7 +206,6 @@ class CRIController:
         """
         Background Thread sending alivejog messages to keep connection alive.
         """
-
         while self.connected:
             if self.live_jog_active:
                 with self.jog_speeds_lock:
@@ -227,6 +224,10 @@ class CRIController:
         """
         Background thread receiving data and parsing it to the robot state.
         """
+        if self.sock is None:
+            logger.error("Receive Thread: Not connected.")
+            return
+
         message_buffer = bytearray()
 
         while self.connected:
@@ -291,7 +292,7 @@ class CRIController:
 
         with self.answer_events_lock:
             if message_id not in self.answer_events:
-                return False
+                return None
             wait_event = self.answer_events[message_id]
 
         # prevent deadlock through answer_events_lock
@@ -326,8 +327,8 @@ class CRIController:
                 msg_id = notification["answer"]
 
                 if msg_id in self.answer_events:
-                    if "error" in notification:
-                        self.error_messages[msg_id] = notification["error"]
+                    if (error_msg := notification.get("error", None)) is not None:
+                        self.error_messages[msg_id] = error_msg
 
                     self.answer_events[msg_id].set()
 
@@ -428,7 +429,7 @@ class CRIController:
         else:
             return False
 
-    def set_active_control(self, active: bool) -> None:
+    def set_active_control(self, active: bool) -> bool:
         """Acquire or return active control of robot
 
         Parameters
@@ -480,7 +481,7 @@ class CRIController:
         else:
             return False
 
-    def reference_all_joints(self) -> bool:
+    def reference_all_joints(self, *, timeout: float = 30) -> bool:
         """Reference all joints. Long timout of 30 seconds.
 
         Returns
@@ -492,7 +493,7 @@ class CRIController:
 
         if (msg_id := self._send_command("CMD ReferenceAllJoints", True)) is not None:
             if (
-                error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
+                error_msg := self._wait_for_answer(f"{msg_id}", timeout=timeout)
             ) is not None:
                 logger.debug("Error in ReferenceAllJoints command: %s", error_msg)
                 return False
@@ -501,7 +502,7 @@ class CRIController:
         else:
             return False
 
-    def reference_single_joint(self, joint: str) -> bool:
+    def reference_single_joint(self, joint: str, *, timeout: float = 30) -> bool:
         """Reference a single joint. Long timout of 30 seconds.
 
         Parameters
@@ -527,7 +528,7 @@ class CRIController:
             msg_id := self._send_command(f"CMD ReferenceSingleJoint {joint_msg}", True)
         ) is not None:
             if (
-                error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
+                error_msg := self._wait_for_answer(f"{msg_id}", timeout=timeout)
             ) is not None:
                 logger.debug("Error in ReferenceSingleJoint command: %s", error_msg)
                 return False
@@ -561,7 +562,7 @@ class CRIController:
         else:
             return False
 
-    def wait_for_kinematics_ready(self, timeout: float | None = 30) -> bool:
+    def wait_for_kinematics_ready(self, timeout: float = 30) -> bool:
         """Wait until drive state is indicated as ready.
 
         Parameters
@@ -955,7 +956,7 @@ class CRIController:
         else:
             return False
 
-    def stop_move(self) -> None:
+    def stop_move(self) -> bool:
         """Stop movement
 
         Returns
@@ -1374,6 +1375,7 @@ class CRIController:
 
         if self._send_command(command, True) is None:
             return False
+        return True
 
     def enable_can_bridge(self, enabled: bool) -> None:
         """Enables or diables CAN bridge mode. All other functions are disabled in CAN bridge mode.
@@ -1415,7 +1417,7 @@ class CRIController:
 
     def can_receive(
         self, blocking: bool = True, timeout: float | None = None
-    ) -> dict[str, any] | None:
+    ) -> dict[str, Any] | None:
         """Receive CAN message in CAN bridge mode from the recveive queue.
 
         Returns
@@ -1425,7 +1427,7 @@ class CRIController:
         """
         if not self.can_mode:
             logger.debug("can_receive: CAN mode not enabled")
-            return
+            return None
 
         try:
             item = self.can_queue.get(blocking, timeout)

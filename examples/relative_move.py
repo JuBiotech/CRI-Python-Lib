@@ -1,8 +1,11 @@
 import logging
+
 from cri_lib import CRIController
 
 # 🔹 Configure logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # CRIController is the main interface for controlling the iRC
@@ -31,10 +34,36 @@ controller.set_override(100.0)
 
 # Perform relative movement
 logger.info("Moving base relative: +20mm in X, Y, Z...")
-controller.move_base_relative(20.0, 20.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, wait_move_finished=True, move_finished_timeout=1000)
+controller.move_base_relative(
+    20.0,
+    20.0,
+    20.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    10.0,
+    wait_move_finished=True,
+    move_finished_timeout=1000,
+)
 
 logger.info("Moving back: -20mm in X, Y, Z...")
-controller.move_base_relative(-20.0, -20.0, -20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, wait_move_finished=True, move_finished_timeout=1000)
+controller.move_base_relative(
+    -20.0,
+    -20.0,
+    -20.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    10.0,
+    wait_move_finished=True,
+    move_finished_timeout=1000,
+)
 
 # Disable motors and disconnect
 logger.info("Disabling motors and disconnecting...")
