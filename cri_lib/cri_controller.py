@@ -481,7 +481,7 @@ class CRIController:
         else:
             return False
 
-    def reference_all_joints(self) -> bool:
+    def reference_all_joints(self, *, timeout: float = 30) -> bool:
         """Reference all joints. Long timout of 30 seconds.
 
         Returns
@@ -493,7 +493,7 @@ class CRIController:
 
         if (msg_id := self._send_command("CMD ReferenceAllJoints", True)) is not None:
             if (
-                error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
+                error_msg := self._wait_for_answer(f"{msg_id}", timeout=timeout)
             ) is not None:
                 logger.debug("Error in ReferenceAllJoints command: %s", error_msg)
                 return False
@@ -502,7 +502,7 @@ class CRIController:
         else:
             return False
 
-    def reference_single_joint(self, joint: str) -> bool:
+    def reference_single_joint(self, joint: str, *, timeout: float = 30) -> bool:
         """Reference a single joint. Long timout of 30 seconds.
 
         Parameters
@@ -528,7 +528,7 @@ class CRIController:
             msg_id := self._send_command(f"CMD ReferenceSingleJoint {joint_msg}", True)
         ) is not None:
             if (
-                error_msg := self._wait_for_answer(f"{msg_id}", timeout=30.0)
+                error_msg := self._wait_for_answer(f"{msg_id}", timeout=timeout)
             ) is not None:
                 logger.debug("Error in ReferenceSingleJoint command: %s", error_msg)
                 return False
