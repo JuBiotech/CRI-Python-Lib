@@ -1,6 +1,7 @@
 import logging
 import socket
 import threading
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from queue import Empty, Queue
@@ -73,7 +74,13 @@ class CRIController:
         }
         self.jog_speeds_lock = threading.Lock()
 
-    def connect(self, host: str, port: int = 3920) -> bool:
+    def connect(
+        self,
+        host: str,
+        port: int = 3920,
+        application_name: str = "CRI-Python-Lib",
+        application_version: str = "0-0-0-0",
+    ) -> bool:
         """
         Connect to iRC.
 
@@ -83,6 +90,10 @@ class CRIController:
             IP address or hostname of iRC
         port : int
             port of iRC
+        application_name : str
+            optional name of your application sent to controller
+        application_version: str
+            optional version of your application sent to controller
 
         Returns
         -------
@@ -104,6 +115,10 @@ class CRIController:
 
             # Start sending ALIVEJOG message
             self.jog_thread.start()
+
+            hello_msg = f'INFO Hello "{application_name}" {application_version} {datetime.now(timezone.utc).strftime(format="%Y-%m-%dT%H:%M:%S")}'
+
+            self._send_command(hello_msg)
 
             return True
 
