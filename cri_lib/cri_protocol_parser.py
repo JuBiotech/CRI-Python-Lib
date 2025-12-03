@@ -33,13 +33,14 @@ class CRIProtocolParser:
         self, message: str
     ) -> dict[str, str] | dict[str, str | None] | None:
         """Parses a message to the RobotState of the class.
-        Parameters:
-        -----------
+
+        Parameters
+        ----------
         message: str
             Message to be parsed including `CRISTART` and `CRIEND`
 
-        Returns:
-        --------
+        Returns
+        -------
         None | dict[str, str]
             None if no Notification in necessary or
             a dict indicating which answer event to notify (key: "answer") and optionally an error message (key: "error")
@@ -113,10 +114,10 @@ class CRIProtocolParser:
         """
         Parses a state message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `STATUS` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `STATUS` and `CRIEND`
         """
         segment_start_idx = 0
 
@@ -289,10 +290,10 @@ class CRIProtocolParser:
         """
         Parses a runstate message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `RUNSTATE` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `RUNSTATE` and `CRIEND`
         """
         with self.robot_state_lock:
             if parameters[0] == "MAIN":
@@ -314,10 +315,10 @@ class CRIProtocolParser:
         """
         Parses a cyclestat message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `CYCLESTAT` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `CYCLESTAT` and `CRIEND`
         """
         with self.robot_state_lock:
             self.robot_state.cycle_time = float(parameters[0])
@@ -327,10 +328,10 @@ class CRIProtocolParser:
         """
         Parses a gripperstate message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `GRIPPERSTATE` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `GRIPPERSTATE` and `CRIEND`
         """
         with self.robot_state_lock:
             self.robot_state.gripper_state = float(parameters[0])
@@ -339,10 +340,10 @@ class CRIProtocolParser:
         """
         Parses a variables message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `VARIABLES` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `VARIABLES` and `CRIEND`
         """
         variables: dict[str, float | PosVariable] = {}
         idx = 0
@@ -370,10 +371,10 @@ class CRIProtocolParser:
         """
         Parses a opinfo message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `OPINFO` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `OPINFO` and `CRIEND`
         """
         values = []
         for i in range(7):
@@ -386,13 +387,13 @@ class CRIProtocolParser:
         """
         Parses a cmd message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `CMD` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `CMD` and `CRIEND`
 
-        Returns:
-        --------
+        Returns
+        -------
         str:
             id of answer event
         """
@@ -414,10 +415,10 @@ class CRIProtocolParser:
         """
         Parses a message message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `MESSAGE` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `MESSAGE` and `CRIEND`
         """
         if parameters[0] == "RobotControl":
             if parameters[1] == "Version":
@@ -468,15 +469,15 @@ class CRIProtocolParser:
         parameters: list[str]
             List of splitted strings between `CANBridge` and `CRIEND`
 
-        Returns:
-        --------
+        Returns
+        -------
         dict[str, any] | None
             dict with the following keys:
-                id: CAN id
-                length: length of CAN packet
-                data: bytearray with can message
-                time: timestamp from CRI, 0 at the moment
-                system_time: system timestamp vrom CRI
+            - id: CAN id
+            - length: length of CAN packet
+            - data: bytearray with can message
+            - time: timestamp from CRI, 0 at the moment
+            - system_time: system timestamp vrom CRI
         """
         if parameters[0] != "Msg":
             return None
@@ -521,10 +522,10 @@ class CRIProtocolParser:
         """
         Parses a config message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `CONFIG` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `CONFIG` and `CRIEND`
         """
         if parameters[0] == "ProjectFile":
             with self.robot_state_lock:
@@ -533,13 +534,13 @@ class CRIProtocolParser:
     def _parse_cmderror(self, parameters: Sequence[str]) -> dict[str, str]:
         """Parses a CMDERROR message to notify calling function
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         parameters: list[str]
             List of splitted strings between `CMDERROR` and `CRIEND`
 
-        Returns:
-        --------
+        Returns
+        -------
         dict[str, str]
             A dict indicating which message id to notify (key: "answer") and the error message (key: "error")
         """
@@ -550,10 +551,10 @@ class CRIProtocolParser:
         """
         Parses a info message to the robot state.
 
-        Parameters:
-        -----------
-            parameters: list[str]
-                List of splitted strings between `INFO` and `CRIEND`
+        Parameters
+        ----------
+        parameters: list[str]
+            List of splitted strings between `INFO` and `CRIEND`
         """
         if parameters[0] == "ReferencingInfo":
             # handle bug in RobotControl with missing space before 'Mandatory'
@@ -603,13 +604,13 @@ class CRIProtocolParser:
     def _parse_execerror(self, parameters: Sequence[str]) -> dict[str, str]:
         """Parses a EXECERROR message to notify calling function
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         parameters: list[str]
             List of splitted strings between `EXECERROR` and `CRIEND`
 
-        Returns:
-        --------
+        Returns
+        -------
         dict[str, str]
             A dict indicating which message id to notify (key: "answer") and the error message (key: "error")
         """
@@ -621,15 +622,15 @@ class CRIProtocolParser:
         """
         Splits a string at whitespaces but ignores whitespace whithin quotes.
 
-        Parameters:
-        -----------
-            msg: str
-                String to be splitted
+        Parameters
+        ----------
+        msg: str
+            String to be splitted
 
-        Returns:
-        --------
-            list[str]
-                list containing the splitted parts of the string
+        Returns
+        -------
+        list[str]
+            list containing the splitted parts of the string
         """
         parts = []
         current_part = ""

@@ -692,6 +692,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative joint move
+
         Parameters
         ----------
         A1-A6, E1-E3 : float
@@ -764,6 +765,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Cartesian move
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
@@ -838,6 +840,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in base coordinate system
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
@@ -914,6 +917,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in tool coordinate system
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
