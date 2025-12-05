@@ -12,5 +12,8 @@ dependencies = []
 [tool.setuptools]
 packages = ["cri_lib"]
 
+[tool.setuptools.package-data]
+"cri_lib" = ["py.typed"]
+
 [tool.isort]
 profile = "black"

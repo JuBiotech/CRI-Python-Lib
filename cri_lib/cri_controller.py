@@ -15,6 +15,15 @@ from .robot_state import KinematicsState, RobotState
 logger = logging.getLogger(__name__)
 
 
+class MotionType(Enum):
+    """Robot Motion Type for Jogging"""
+
+    Joint = "Joint"
+    CartBase = "CartBase"
+    CartTool = "CartTool"
+    Platform = "Platform"
+
+
 class CRIController:
     """
     Class implementing the CRI network protocol for igus Robot Control.
@@ -24,14 +33,6 @@ class CRIController:
     ACTIVE_JOG_INTERVAL_SEC = 0.02
     RECEIVE_TIMEOUT_SEC = 5
     DEFAULT_ANSWER_TIMEOUT = 10.0
-
-    class MotionType(Enum):
-        """Robot Motion Type for Jogging"""
-
-        Joint = "Joint"
-        CartBase = "CartBase"
-        CartTool = "CartTool"
-        Platform = "Platform"
 
     def __init__(self) -> None:
         self.robot_state: RobotState = RobotState()
@@ -692,6 +693,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative joint move
+
         Parameters
         ----------
         A1-A6, E1-E3 : float
@@ -764,6 +766,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Cartesian move
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
@@ -838,6 +841,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in base coordinate system
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
@@ -914,6 +918,7 @@ class CRIController:
         acceleration: float | None = None,
     ) -> bool:
         """Relative cartesian move in tool coordinate system
+
         Parameters
         ----------
         X,Y,Z,A,B,C,E1-E3 : float
@@ -1508,3 +1513,7 @@ class CRIController:
                 return True
         else:
             return False
+
+
+# Monkey patch to maintain backward compatibility
+CRIController.MotionType = MotionType  # type: ignore
