@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import logging
 import socket
@@ -19,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT = object()
 """Placeholder for defaulting a parameter to runtime-configurable default values."""
+REQUIRED_STATUS_CATEGORIES = {"STATUS", "RUNSTATE"}
+"""Robot state message categories that must must be received before confirming fully connected."""
 
 
 class MotionType(Enum):
@@ -1441,12 +1444,20 @@ class CRIConnector:
 
     @contextlib.asynccontextmanager
     async def observe(self) -> AsyncIterator[CRIClient]:
-        """Establish connection for reading robot state."""
+        """Establish connection for reading robot state.
+
+        ⚠️ Do not connect/disconnect at high frequency - use long-lived connection for monitoring ⚠️
+        """
         client = CRIClient()
         try:
             client.connect(
                 self.host, self.port, self.application_name, self.application_version
             )
+            while REQUIRED_STATUS_CATEGORIES.difference(
+                client.robot_state.category_time_ns
+            ):
+                await asyncio.sleep(0.05)
+
             yield client
             # Graceful context exit; nothing to do other than disconnect in finally block.
         finally:
@@ -1468,6 +1479,11 @@ class CRIConnector:
             controller.connect(
                 self.host, self.port, self.application_name, self.application_version
             )
+            while REQUIRED_STATUS_CATEGORIES.difference(
+                controller.robot_state.category_time_ns
+            ):
+                await asyncio.sleep(0.05)
+
             # Take active control
             if not controller.set_active_control(True):
                 raise CRICommandError("Failed to acquire active control.")

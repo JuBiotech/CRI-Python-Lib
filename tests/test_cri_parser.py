@@ -1,3 +1,4 @@
+import copy
 import threading
 
 import pytest
@@ -22,6 +23,16 @@ from cri_lib import (
 )
 
 
+def robot_state_equal(actual: RobotState, expected: RobotState) -> bool:
+    """Compare robot state without requiring update nanosecond values to match."""
+    if set(actual.category_time_ns) != set(expected.category_time_ns):
+        return False
+    # copy the timestamp values to facilitate equals comparison of the dataclasses
+    expected_copy = copy.deepcopy(expected)
+    expected_copy.category_time_ns.update(actual.category_time_ns)
+    return actual == expected_copy
+
+
 def test_parse_state():
     test_message = """
 CRISTART 1234 STATUS MODE joint
@@ -44,6 +55,7 @@ CRIEND
     """
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["STATUS"] = 0
     robot_state_correct.mode = RobotMode.JOINT
     robot_state_correct.joints_set_point = JointsState(
         1.00,
@@ -135,7 +147,7 @@ CRIEND
     controller = CRIController()
     controller._parse_message(test_message)
 
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_runstate_main():
@@ -144,6 +156,7 @@ def test_parse_runstate_main():
     )
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["RUNSTATE"] = 0
     robot_state_correct.main_main_program = "testmotion.xml"
     robot_state_correct.main_current_program = "pickpart.xml"
     robot_state_correct.main_commands_count = 12
@@ -153,7 +166,7 @@ def test_parse_runstate_main():
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_runstate_logic():
@@ -162,6 +175,7 @@ def test_parse_runstate_logic():
     )
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["RUNSTATE"] = 0
     robot_state_correct.logic_main_program = "testlogic.xml"
     robot_state_correct.logic_current_program = "testlogic.xml"
     robot_state_correct.logic_commands_count = 11
@@ -171,7 +185,7 @@ def test_parse_runstate_logic():
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_regr_parse_status_plattform():
@@ -180,11 +194,12 @@ def test_regr_parse_status_plattform():
     test_message = "CRISTART 1234 STATUS POSCARTPLATTFORM 10.0 20.0 180.00 CRIEND"
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["STATUS"] = 0
     robot_state_correct.position_platform = PlatformCartesianPosition(10.0, 20.0, 180.0)
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_cyclestat():
@@ -192,12 +207,13 @@ def test_parse_cyclestat():
 
     test_message = "CRISTART 1234 CYCLESTAT 9.5 12.3 CRIEND"
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["CYCLESTAT"] = 0
     robot_state_correct.cycle_time = 9.5
     robot_state_correct.workload = 12.3
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_gripperstate():
@@ -205,21 +221,23 @@ def test_parse_gripperstate():
 
     test_message = "CRISTART 1234 GRIPPERSTATE 0.7 CRIEND"
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["GRIPPERSTATE"] = 0
     robot_state_correct.gripper_state = 0.7
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_unknown_message_tpye():
     """Test for unknown message type"""
     test_message = "CRISTART 1234 UNKNOWN 1 2 3 4 5 CRIEND"
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["UNKNOWN"] = 0
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_variables():
@@ -314,53 +332,57 @@ def test_parse_variables():
         ),
     }
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["VARIABLES"] = 0
     robot_state_correct.variabels = variables
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_opinfo():
     test_message = "CRISTART 6 OPINFO 0 235 235 114 5 0 0 CRIEND"
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["OPINFO"] = 0
 
     robot_state_correct.operation_info = OperationInfo(0, 235, 235, 114, 5, 0, 0)
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_cmd_active():
     test_message = "CRISTART 4 CMD Active false CRIEND"
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["CMD"] = 0
 
     robot_state_correct.active_control = False
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
     test_message = "CRISTART 4 CMD Active true CRIEND"
     robot_state_correct.active_control = True
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
     test_message = "CRISTART 4 CMD Active foo CRIEND"
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_message_robotcontrol():
     test_message = "CRISTART 1 MESSAGE RobotControl Version V980-14-002-3 CRIEND"
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["MESSAGE"] = 0
     robot_state_correct.robot_control_version = "V980-14-002-3"
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_splits_quotes_aware():
@@ -384,31 +406,33 @@ def test_parse_message_configuration():
     test_message = 'CRISTART 2 MESSAGE Configuration: "igus REBEL-6DOF" Type: "igus-REBEL/REBEL-6DOF-02" Gripper: "Multigrip" CRIEND'
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["MESSAGE"] = 0
     robot_state_correct.robot_configuration = "igus REBEL-6DOF"
     robot_state_correct.robot_type = "igus-REBEL/REBEL-6DOF-02"
     robot_state_correct.gripper_type = "Multigrip"
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
     test_message = 'CRISTART 2 MESSAGE Type: "igus-REBEL/REBEL-6DOF-02test1" Gripper: "Multigriptest1" CRIEND'
     robot_state_correct.robot_type = "igus-REBEL/REBEL-6DOF-02test1"
     robot_state_correct.gripper_type = "Multigriptest1"
 
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_config():
     test_message = "CRISTART 1234 CONFIG ProjectFile robotprj.xml CRIEND"
 
     robot_state_correct = RobotState()
+    robot_state_correct.category_time_ns["CONFIG"] = 0
     robot_state_correct.project_file = "robotprj.xml"
 
     controller = CRIController()
     controller._parse_message(test_message)
-    assert controller.robot_state == robot_state_correct
+    assert robot_state_equal(controller.robot_state, robot_state_correct)
 
 
 def test_parse_cmdack():
