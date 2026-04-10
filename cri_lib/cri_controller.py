@@ -494,7 +494,7 @@ class CRIController(CRIClient):
         return super()._send_command(command, register_answer, fixed_answer_name)
 
     def reset(self) -> bool:
-        """Reset robot
+        """Reset robot clears errors and fetches current axis positions from the modules.
 
         Returns
         -------
@@ -510,8 +510,9 @@ class CRIController(CRIClient):
             return True
 
     def enable(self) -> bool:
-        """Enable robot
-           An potential error message received from the robot will be logged with priority DEBUG
+        """Enable robot activates the motors.
+
+        An potential error message received from the robot will be logged with priority DEBUG
 
         Returns
         -------
@@ -527,7 +528,7 @@ class CRIController(CRIClient):
             return True
 
     def disable(self) -> bool:
-        """Disable robot
+        """Disable robot stops currently running programs, movements and deactivates the motors.
 
         Returns
         -------
