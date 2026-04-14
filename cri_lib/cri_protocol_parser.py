@@ -1,4 +1,5 @@
 import logging
+import time
 from threading import Lock
 from typing import Any, Sequence
 
@@ -46,69 +47,66 @@ class CRIProtocolParser:
             a dict indicating which answer event to notify (key: "answer") and optionally an error message (key: "error")
         """
         parts = message.split()
-
-        match parts[2]:
+        cmd_category = parts[2]
+        result: dict[str, str] | dict[str, str | None] | None = None
+        match cmd_category:
             case "STATUS":
                 self._parse_status(parts[3:-1])
-                return {"answer": "status"}
+                result = {"answer": "status"}
 
             case "RUNSTATE":
                 self._parse_runstate(parts[3:-1])
-                return None
 
             case "CYCLESTAT":
                 self._parse_cyclestat(parts[3:-1])
-                return None
 
             case "GRIPPERSTATE":
                 self._parse_gripperstate(parts[3:-1])
-                return None
 
             case "VARIABLES":
                 self._parse_variables(parts[3:-1])
-                return None
 
             case "OPINFO":
                 self._parse_opinfo(parts[3:-1])
-                return None
 
             case "CMD":
-                return {"answer": self._parse_cmd(parts[3:-1])}
+                result = {"answer": self._parse_cmd(parts[3:-1])}
 
             case "MESSAGE":
                 self._parse_message_message(parts[3:-1])
-                return None
 
             case "CONFIG":
                 self._parse_config(parts[3:-1])
-                return None
 
             case "CANBridge":
-                return self._parse_can_bridge(parts[3:-1])
+                result = self._parse_can_bridge(parts[3:-1])
 
             case "CMDACK":
-                return {"answer": parts[3]}
+                result = {"answer": parts[3]}
 
             case "CMDERROR":
-                return self._parse_cmderror(parts[3:-1])
+                result = self._parse_cmderror(parts[3:-1])
 
             case "INFO":
                 if (answer := self._parse_info(parts[3:-1])) is not None:
-                    return {"answer": answer}
-                else:
-                    return None
+                    result = {"answer": answer}
 
             case "EXECEND":
-                return {"answer": "EXECEND"}
+                result = {"answer": "EXECEND"}
 
             case "EXECERROR":
-                return self._parse_execerror(parts[3:-1])
+                result = self._parse_execerror(parts[3:-1])
 
             case _:
                 logger.debug(
-                    "Unknown message type %s received:\n%s", parts[2], " ".join(parts)
+                    "Unknown message type %s received:\n%s",
+                    cmd_category,
+                    " ".join(parts),
                 )
-                return None
+        # Remember per-category timestamps to facilitate age-checks
+        with self.robot_state_lock:
+            self.robot_state.category_time_ns[cmd_category] = time.time_ns()
+        return result
 
     def _parse_status(self, parameters: list[str]) -> None:
         """

@@ -345,3 +345,6 @@ class RobotState:
 
     motor_temps: list[float] = field(default_factory=lambda: [0.0] * 16)
     """Temperatures of motors"""
+
+    category_time_ns: dict[str, int] = field(default_factory=lambda: {})
+    """Per `CMD_CATEGORY ` nanosecond epoch timestamps when the most recent update was received."""
