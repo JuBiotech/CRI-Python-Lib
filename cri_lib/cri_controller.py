@@ -378,7 +378,7 @@ class CRIClient:
 
                     self.answer_events[msg_id].set()
 
-    def wait_for_status_update(self, timeout: float | None = None) -> None:
+    async def wait_for_status_update_async(self, timeout: float | None = None) -> None:
         """Wait for next STATUS message.
 
         Parameters
@@ -392,7 +392,7 @@ class CRIClient:
             raised if no status update was received in given timeout
         """
         self._register_answer("status")
-        self._wait_for_answer("status", timeout)
+        await self._wait_for_answer_async("status", timeout)
 
     def register_status_callback(self, callback: Callable | None) -> None:
         """Register a callback which is called every time a STATUS message was parsed to the state.
@@ -408,7 +408,7 @@ class CRIClient:
         """
         self.status_callback = callback
 
-    def wait_for_kinematics_ready(self, timeout: float = 30) -> bool:
+    async def wait_for_kinematics_ready_async(self, timeout: float = 30) -> bool:
         """Wait until drive state is indicated as ready.
 
         Parameters
@@ -424,7 +424,7 @@ class CRIClient:
         start_time = time()
         new_timeout = timeout
         while new_timeout > 0.0:
-            self.wait_for_status_update(timeout=new_timeout)
+            await self.wait_for_status_update_async(timeout=new_timeout)
             if (self.robot_state.kinematics_state == KinematicsState.NO_ERROR) and (
                 self.robot_state.combined_axes_error == "NoError"
             ):
@@ -434,55 +434,51 @@ class CRIClient:
 
         return False
 
-    def get_board_temperatures(
+    async def get_board_temperatures_async(
         self,
-        blocking: bool = True,
         timeout: float | None = DEFAULT,  # type: ignore
     ) -> bool:
         """Receive motor controller PCB temperatures and save in robot state
 
         Parameters
         ----------
-        blocking: bool
-            wait for response, always returns True if not waiting
-
         timeout: float | None
             timeout for waiting in seconds or None for infinite waiting
         """
         self._send_command("SYSTEM GetBoardTemp", True, "info_boardtemp")
         if (
-            error_msg := self._wait_for_answer("info_boardtemp", timeout=timeout)
+            error_msg := await self._wait_for_answer_async(
+                "info_boardtemp", timeout=timeout
+            )
         ) is not None:
             logger.debug("Error in GetBoardTemp command: %s", error_msg)
             return False
         else:
             return True
 
-    def get_motor_temperatures(
+    async def get_motor_temperatures_async(
         self,
-        blocking: bool = True,
         timeout: float | None = DEFAULT,  # type: ignore
     ) -> bool:
         """Receive motor temperatures and save in robot state
 
         Parameters
         ----------
-        blocking: bool
-            wait for response, always returns True if not waiting
-
         timeout: float | None
             timeout for waiting in seconds or None for infinite waiting
         """
         self._send_command("SYSTEM GetMotorTemp", True, "info_motortemp")
         if (
-            error_msg := self._wait_for_answer("info_motortemp", timeout=timeout)
+            error_msg := await self._wait_for_answer_async(
+                "info_motortemp", timeout=timeout
+            )
         ) is not None:
             logger.debug("Error in GetMotorTemp command: %s", error_msg)
             return False
         else:
             return True
 
-    def list_files(self, target_directory: str = "Programs") -> bool:
+    async def list_files_async(self, target_directory: str = "Programs") -> bool:
         """Request a list of all files in the directory, which is relative to the /Data/ directory.
 
         Parameters
@@ -504,7 +500,7 @@ class CRIClient:
             is not None
         ):
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "info_filelist", timeout=self.DEFAULT_ANSWER_TIMEOUT
                 )
             ) is not None:
@@ -514,6 +510,40 @@ class CRIClient:
                 return True
         else:
             return False
+
+    def wait_for_status_update(self, timeout: float | None = None) -> None:
+        """Blocking wrapper around :func:`CRIClient.wait_for_status_update_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.wait_for_status_update_async(timeout)
+        )
+
+    def wait_for_kinematics_ready(self, timeout: float = 30) -> bool:
+        """Blocking wrapper around :func:`CRIClient.wait_for_kinematics_ready_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.wait_for_kinematics_ready_async(timeout)
+        )
+
+    def get_board_temperatures(
+        self,
+        timeout: float | None = DEFAULT,  # type: ignore
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIClient.get_board_temperatures_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.get_board_temperatures_async(timeout=timeout)
+        )
+
+    def get_motor_temperatures(
+        self,
+        timeout: float | None = DEFAULT,  # type: ignore
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIClient.get_motor_temperatures_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.get_motor_temperatures_async(timeout=timeout)
+        )
+
+    def list_files(self) -> bool:
+        """Blocking wrapper around :func:`CRIClient.list_files_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.list_files_async())
 
 
 class CRIController(CRIClient):
@@ -559,7 +589,7 @@ class CRIController(CRIClient):
         """Wraps the superclass method to make it public."""
         return super()._send_command(command, register_answer, fixed_answer_name)
 
-    def reset(self) -> bool:
+    async def reset_async(self) -> bool:
         """Reset robot clears errors and fetches current axis positions from the modules.
 
         Returns
@@ -569,13 +599,13 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         msg_id = self._send_command("CMD Reset", True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in RESET command: %s", error_msg)
             return False
         else:
             return True
 
-    def enable(self) -> bool:
+    async def enable_async(self) -> bool:
         """Enable robot activates the motors.
 
         An potential error message received from the robot will be logged with priority DEBUG
@@ -587,13 +617,13 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         msg_id = self._send_command("CMD Enable", True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in ENABLE command: %s", error_msg)
             return False
         else:
             return True
 
-    def disable(self) -> bool:
+    async def disable_async(self) -> bool:
         """Disable robot stops currently running programs, movements and deactivates the motors.
 
         Returns
@@ -603,13 +633,13 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         msg_id = self._send_command("CMD Disable", True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in DISABLE command: %s", error_msg)
             return False
         else:
             return True
 
-    def set_active_control(self, active: bool) -> bool:
+    async def set_active_control_async(self, active: bool) -> bool:
         """Acquire or return active control of robot
 
         Parameters
@@ -624,14 +654,16 @@ class CRIController(CRIClient):
             f"Active_{str(active).lower()}",
         )
         if (
-            error_msg := self._wait_for_answer(f"Active_{str(active).lower()}")
+            error_msg := await self._wait_for_answer_async(
+                f"Active_{str(active).lower()}"
+            )
         ) is not None:
             logger.debug("Error in set active control command: %s", error_msg)
             return False
         else:
             return True
 
-    def zero_all_joints(self) -> bool:
+    async def zero_all_joints_async(self) -> bool:
         """Set all joints to zero
 
         Returns
@@ -641,13 +673,13 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         msg_id = self._send_command("CMD SetJointsToZero", True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in SetJointsToZero command: %s", error_msg)
             return False
         else:
             return True
 
-    def reference_all_joints(self, *, timeout: float = 30) -> bool:
+    async def reference_all_joints_async(self, *, timeout: float = 30) -> bool:
         """Reference all joints. Long timout of 30 seconds.
 
         Returns
@@ -657,13 +689,17 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         msg_id = self._send_command("CMD ReferenceAllJoints", True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=timeout)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=timeout)
+        ) is not None:
             logger.debug("Error in ReferenceAllJoints command: %s", error_msg)
             return False
         else:
             return True
 
-    def reference_single_joint(self, joint: str, *, timeout: float = 30) -> bool:
+    async def reference_single_joint_async(
+        self, joint: str, *, timeout: float = 30
+    ) -> bool:
         """Reference a single joint. Long timout of 30 seconds.
 
         Parameters
@@ -686,13 +722,15 @@ class CRIController(CRIClient):
             return False
 
         msg_id = self._send_command(f"CMD ReferenceSingleJoint {joint_msg}", True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=timeout)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=timeout)
+        ) is not None:
             logger.debug("Error in ReferenceSingleJoint command: %s", error_msg)
             return False
         else:
             return True
 
-    def get_referencing_info(self):
+    async def get_referencing_info_async(self):
         """Reference all joints. Long timout of 30 seconds.
 
         Returns
@@ -702,13 +740,15 @@ class CRIController(CRIClient):
             `False` if request was not successful
         """
         self._send_command("CMD GetReferencingInfo", True, "info_referencing")
-        if (error_msg := self._wait_for_answer("info_referencing")) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async("info_referencing")
+        ) is not None:
             logger.debug("Error in GetReferencingInfo command: %s", error_msg)
             return False
         else:
             return True
 
-    def move_joints(
+    async def move_joints_async(
         self,
         A1: float,
         A2: float,
@@ -760,13 +800,15 @@ class CRIController(CRIClient):
             self._register_answer("EXECEND")
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=30.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=30.0)
+        ) is not None:
             logger.debug("Error in Move Joints command: %s", error_msg)
             return False
 
         if wait_move_finished:
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "EXECEND", timeout=move_finished_timeout
                 )
             ) is not None:
@@ -774,7 +816,7 @@ class CRIController(CRIClient):
                 return False
         return True
 
-    def move_joints_relative(
+    async def move_joints_relative_async(
         self,
         A1: float,
         A2: float,
@@ -824,13 +866,15 @@ class CRIController(CRIClient):
             self._register_answer("EXECEND")
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=30.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=30.0)
+        ) is not None:
             logger.debug("Error in Move Joints command: %s", error_msg)
             return False
 
         if wait_move_finished:
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "EXECEND", timeout=move_finished_timeout
                 )
             ) is not None:
@@ -840,7 +884,7 @@ class CRIController(CRIClient):
                 return False
         return True
 
-    def move_cartesian(
+    async def move_cartesian_async(
         self,
         X: float,
         Y: float,
@@ -896,13 +940,15 @@ class CRIController(CRIClient):
             self._register_answer("EXECEND")
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=30.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=30.0)
+        ) is not None:
             logger.debug("Error in Move Joints command: %s", error_msg)
             return False
 
         if wait_move_finished:
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "EXECEND", timeout=move_finished_timeout
                 )
             ) is not None:
@@ -911,7 +957,7 @@ class CRIController(CRIClient):
 
         return True
 
-    def move_base_relative(
+    async def move_base_relative_async(
         self,
         X: float,
         Y: float,
@@ -952,9 +998,7 @@ class CRIController(CRIClient):
             optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
             requires igus Robot Control version >= V14-004-1 on robot controller
         """
-        command = (
-            f"CMD Move RelativeBase {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity} {frame}"
-        )
+        command = f"CMD Move RelativeBase {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity} {frame}"
 
         if (
             (acceleration is not None)
@@ -967,13 +1011,15 @@ class CRIController(CRIClient):
             self._register_answer("EXECEND")
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=30.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=30.0)
+        ) is not None:
             logger.debug("Error in Move Joints command: %s", error_msg)
             return False
 
         if wait_move_finished:
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "EXECEND", timeout=move_finished_timeout
                 )
             ) is not None:
@@ -982,7 +1028,7 @@ class CRIController(CRIClient):
 
         return True
 
-    def move_tool_relative(
+    async def move_tool_relative_async(
         self,
         X: float,
         Y: float,
@@ -1023,9 +1069,7 @@ class CRIController(CRIClient):
             optional acceleration of move in percent of maximum acceleration of robot. Controller defaults to 40%
             requires igus Robot Control version >= V14-004-1 on robot controller
         """
-        command = (
-            f"CMD Move RelativeTool {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity} {frame}"
-        )
+        command = f"CMD Move RelativeTool {X} {Y} {Z} {A} {B} {C} {E1} {E2} {E3} {velocity} {frame}"
 
         if (
             (acceleration is not None)
@@ -1038,13 +1082,15 @@ class CRIController(CRIClient):
             self._register_answer("EXECEND")
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=30.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=30.0)
+        ) is not None:
             logger.debug("Error in Move Joints command: %s", error_msg)
             return False
 
         if wait_move_finished:
             if (
-                error_msg := self._wait_for_answer(
+                error_msg := await self._wait_for_answer_async(
                     "EXECEND", timeout=move_finished_timeout
                 )
             ) is not None:
@@ -1053,7 +1099,7 @@ class CRIController(CRIClient):
 
         return True
 
-    def stop_move(self) -> bool:
+    async def stop_move_async(self) -> bool:
         """Stop movement
 
         Returns
@@ -1064,7 +1110,9 @@ class CRIController(CRIClient):
         """
 
         msg_id = self._send_command("CMD Move Stop", True)
-        if (error_msg := self._wait_for_answer(msg_id, timeout=5.0)) is not None:
+        if (
+            error_msg := await self._wait_for_answer_async(msg_id, timeout=5.0)
+        ) is not None:
             logger.debug("Error in Move Stop command: %s", error_msg)
             return False
         else:
@@ -1124,7 +1172,7 @@ class CRIController(CRIClient):
                 "E3": E3,
             }
 
-    def set_motion_type(self, motion_type: MotionType):
+    async def set_motion_type_async(self, motion_type: MotionType):
         """Set motion type
 
         Parameters
@@ -1141,13 +1189,13 @@ class CRIController(CRIClient):
         command = f"CMD MotionType{motion_type.value}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in MotionType command: %s", error_msg)
             return False
         else:
             return True
 
-    def set_override(self, override: float):
+    async def set_override_async(self, override: float):
         """Set override
 
         Parameters
@@ -1164,13 +1212,13 @@ class CRIController(CRIClient):
         command = f"CMD Override {override}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in Override command: %s", error_msg)
             return False
         else:
             return True
 
-    def set_dout(self, id: int, value: bool):
+    async def set_dout_async(self, id: int, value: bool):
         """Set digital out
 
         Parameters
@@ -1193,13 +1241,13 @@ class CRIController(CRIClient):
         command = f"CMD DOUT {id} {str(value).lower()}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in DOUT command: %s", error_msg)
             return False
         else:
             return True
 
-    def set_din(self, id: int, value: bool):
+    async def set_din_async(self, id: int, value: bool):
         """Set digital inout, only available in simulation
 
         Parameters
@@ -1222,13 +1270,13 @@ class CRIController(CRIClient):
         command = f"CMD DIN {id} {str(value).lower()}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in DIN command: %s", error_msg)
             return False
         else:
             return True
 
-    def set_global_signal(self, id: int, value: bool):
+    async def set_global_signal_async(self, id: int, value: bool):
         """Set global signal
 
         Parameters
@@ -1251,13 +1299,13 @@ class CRIController(CRIClient):
         command = f"CMD GSIG {id} {str(value).lower()}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in DIN command: %s", error_msg)
             return False
         else:
             return True
 
-    def load_programm(self, program_name: str) -> bool:
+    async def load_programm_async(self, program_name: str) -> bool:
         """Load a program file from disk into the robot controller
 
         Parameters
@@ -1274,13 +1322,13 @@ class CRIController(CRIClient):
         command = f"CMD LoadProgram {program_name}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in load_program command: %s", error_msg)
             return False
         else:
             return True
 
-    def load_logic_programm(self, program_name: str) -> bool:
+    async def load_logic_programm_async(self, program_name: str) -> bool:
         """Load a logic program file from disk into the robot controller
 
         Parameters
@@ -1297,13 +1345,13 @@ class CRIController(CRIClient):
         command = f"CMD LoadLogicProgram {program_name}"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in load_logic_program command: %s", error_msg)
             return False
         else:
             return True
 
-    def start_programm(self) -> bool:
+    async def start_programm_async(self) -> bool:
         """Start currently loaded Program
 
         Returns
@@ -1315,13 +1363,13 @@ class CRIController(CRIClient):
         command = "CMD StartProgram"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in start_program command: %s", error_msg)
             return False
         else:
             return True
 
-    def stop_programm(self) -> bool:
+    async def stop_programm_async(self) -> bool:
         """Stop currently running Program
 
         Returns
@@ -1333,13 +1381,13 @@ class CRIController(CRIClient):
         command = "CMD StopProgram"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in stop_program command: %s", error_msg)
             return False
         else:
             return True
 
-    def pause_programm(self) -> bool:
+    async def pause_programm_async(self) -> bool:
         """Pause currently running Program
 
         Returns
@@ -1351,7 +1399,7 @@ class CRIController(CRIClient):
         command = "CMD PauseProgram"
 
         msg_id = self._send_command(command, True)
-        if (error_msg := self._wait_for_answer(msg_id)) is not None:
+        if (error_msg := await self._wait_for_answer_async(msg_id)) is not None:
             logger.debug("Error in pause_program command: %s", error_msg)
             return False
         else:
@@ -1465,6 +1513,285 @@ class CRIController(CRIClient):
             return None
 
         return item
+
+    def reset(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.reset_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.reset_async())
+
+    def enable(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.enable_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.enable_async())
+
+    def disable(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.disable_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.disable_async())
+
+    def set_active_control(self, active: bool) -> bool:
+        """Blocking wrapper around :func:`CRIController.set_active_control_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_active_control_async(active=active)
+        )
+
+    def zero_all_joints(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.zero_all_joints_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.zero_all_joints_async())
+
+    def reference_all_joints(self, *, timeout: float = 30) -> bool:
+        """Blocking wrapper around :func:`CRIController.reference_all_joints_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.reference_all_joints_async(timeout=timeout)
+        )
+
+    def reference_single_joint(self, joint: str, *, timeout: float = 30) -> bool:
+        """Blocking wrapper around :func:`CRIController.reference_single_joint_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.reference_single_joint_async(joint=joint, timeout=timeout)
+        )
+
+    def get_referencing_info(self):
+        """Blocking wrapper around :func:`CRIController.get_referencing_info_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.get_referencing_info_async()
+        )
+
+    def move_joints(
+        self,
+        A1: float,
+        A2: float,
+        A3: float,
+        A4: float,
+        A5: float,
+        A6: float,
+        E1: float,
+        E2: float,
+        E3: float,
+        velocity: float,
+        wait_move_finished: bool = False,
+        move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIController.move_joints_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.move_joints_async(
+                A1=A1,
+                A2=A2,
+                A3=A3,
+                A4=A4,
+                A5=A5,
+                A6=A6,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                velocity=velocity,
+                wait_move_finished=wait_move_finished,
+                move_finished_timeout=move_finished_timeout,
+                acceleration=acceleration,
+            )
+        )
+
+    def move_joints_relative(
+        self,
+        A1: float,
+        A2: float,
+        A3: float,
+        A4: float,
+        A5: float,
+        A6: float,
+        E1: float,
+        E2: float,
+        E3: float,
+        velocity: float,
+        wait_move_finished: bool = False,
+        move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIController.move_joints_relative_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.move_joints_relative_async(
+                A1=A1,
+                A2=A2,
+                A3=A3,
+                A4=A4,
+                A5=A5,
+                A6=A6,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                velocity=velocity,
+                wait_move_finished=wait_move_finished,
+                move_finished_timeout=move_finished_timeout,
+                acceleration=acceleration,
+            )
+        )
+
+    def move_cartesian(
+        self,
+        X: float,
+        Y: float,
+        Z: float,
+        A: float,
+        B: float,
+        C: float,
+        E1: float,
+        E2: float,
+        E3: float,
+        velocity: float,
+        frame: str = "#base",
+        wait_move_finished: bool = False,
+        move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIController.move_cartesian_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.move_cartesian_async(
+                X=X,
+                Y=Y,
+                Z=Z,
+                A=A,
+                B=B,
+                C=C,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                velocity=velocity,
+                frame=frame,
+                wait_move_finished=wait_move_finished,
+                move_finished_timeout=move_finished_timeout,
+                acceleration=acceleration,
+            )
+        )
+
+    def move_base_relative(
+        self,
+        X: float,
+        Y: float,
+        Z: float,
+        A: float,
+        B: float,
+        C: float,
+        E1: float,
+        E2: float,
+        E3: float,
+        velocity: float,
+        frame: str = "#base",
+        wait_move_finished: bool = False,
+        move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIController.move_base_relative_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.move_base_relative_async(
+                X=X,
+                Y=Y,
+                Z=Z,
+                A=A,
+                B=B,
+                C=C,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                velocity=velocity,
+                frame=frame,
+                wait_move_finished=wait_move_finished,
+                move_finished_timeout=move_finished_timeout,
+                acceleration=acceleration,
+            )
+        )
+
+    def move_tool_relative(
+        self,
+        X: float,
+        Y: float,
+        Z: float,
+        A: float,
+        B: float,
+        C: float,
+        E1: float,
+        E2: float,
+        E3: float,
+        velocity: float,
+        frame: str = "#base",
+        wait_move_finished: bool = False,
+        move_finished_timeout: float | None = 300.0,
+        acceleration: float | None = None,
+    ) -> bool:
+        """Blocking wrapper around :func:`CRIController.move_tool_relative_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.move_tool_relative_async(
+                X=X,
+                Y=Y,
+                Z=Z,
+                A=A,
+                B=B,
+                C=C,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                velocity=velocity,
+                frame=frame,
+                wait_move_finished=wait_move_finished,
+                move_finished_timeout=move_finished_timeout,
+                acceleration=acceleration,
+            )
+        )
+
+    def stop_move(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.stop_move_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.stop_move_async())
+
+    def set_motion_type(self, motion_type: MotionType):
+        """Blocking wrapper around :func:`CRIController.set_motion_type_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_motion_type_async(motion_type)
+        )
+
+    def set_override(self, override: float):
+        """Blocking wrapper around :func:`CRIController.set_override_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_override_async(override)
+        )
+
+    def set_dout(self, id: int, value: bool):
+        """Blocking wrapper around :func:`CRIController.set_dout_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_dout_async(id=id, value=value)
+        )
+
+    def set_din(self, id: int, value: bool):
+        """Blocking wrapper around :func:`CRIController.set_din_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_din_async(id=id, value=value)
+        )
+
+    def set_global_signal(self, id: int, value: bool):
+        """Blocking wrapper around :func:`CRIController.set_global_signal_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.set_global_signal_async(id=id, value=value)
+        )
+
+    def load_programm(self, program_name: str) -> bool:
+        """Blocking wrapper around :func:`CRIController.load_programm_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.load_programm_async(program_name)
+        )
+
+    def load_logic_programm(self, program_name: str) -> bool:
+        """Blocking wrapper around :func:`CRIController.load_logic_programm_async`."""
+        return asyncio.get_event_loop().run_until_complete(
+            self.load_logic_programm_async(program_name)
+        )
+
+    def start_programm(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.start_programm_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.start_programm_async())
+
+    def stop_programm(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.stop_programm_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.stop_programm_async())
+
+    def pause_programm(self) -> bool:
+        """Blocking wrapper around :func:`CRIController.pause_programm_async`."""
+        return asyncio.get_event_loop().run_until_complete(self.pause_programm_async())
 
 
 # Monkey patch to maintain backward compatibility
