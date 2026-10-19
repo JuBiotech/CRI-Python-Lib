@@ -248,9 +248,7 @@ class CRIClient:
         message = f"CRISTART {command_counter} {command} CRIEND"
 
         answer_id = (
-            fixed_answer_name
-            if fixed_answer_name is not None
-            else str(command_counter)
+            fixed_answer_name if fixed_answer_name is not None else str(command_counter)
         )
         answer_event = self._register_answer(answer_id) if register_answer else None
 
@@ -333,9 +331,7 @@ class CRIClient:
         timeout: float | None = DEFAULT,  # type: ignore
         answer_event: asyncio.Event | None = None,
     ) -> None | str:
-        return _run_sync(
-            self._wait_for_answer_async(message_id, timeout, answer_event)
-        )
+        return _run_sync(self._wait_for_answer_async(message_id, timeout, answer_event))
 
     async def _wait_for_answer_async(
         self,
@@ -414,12 +410,13 @@ class CRIClient:
             with self.answer_events_lock:
                 msg_id = notification["answer"]
 
-                events = self.answer_events.pop(msg_id, [])
-                error_msg = notification.get("error")
-                for event in events:
-                    if error_msg is not None:
-                        self.error_messages[event] = error_msg
-                    event.set()
+                if msg_id is not None:
+                    events = self.answer_events.pop(msg_id, [])
+                    error_msg = notification.get("error")
+                    for event in events:
+                        if error_msg is not None:
+                            self.error_messages[event] = error_msg
+                        event.set()
 
     async def wait_for_status_update_async(self, timeout: float | None = None) -> None:
         """Wait for next STATUS message.
@@ -492,9 +489,7 @@ class CRIClient:
         -------
         list of motor controller PCB temperatures
         """
-        sent_command = self._send_command(
-            "SYSTEM GetBoardTemp", True, "info_boardtemp"
-        )
+        sent_command = self._send_command("SYSTEM GetBoardTemp", True, "info_boardtemp")
         if (
             error_msg := await self._wait_for_answer_async(
                 sent_command, timeout=timeout
@@ -518,9 +513,7 @@ class CRIClient:
         -------
         list of motor temperatures
         """
-        sent_command = self._send_command(
-            "SYSTEM GetMotorTemp", True, "info_motortemp"
-        )
+        sent_command = self._send_command("SYSTEM GetMotorTemp", True, "info_motortemp")
         if (
             error_msg := await self._wait_for_answer_async(
                 sent_command, timeout=timeout
@@ -546,9 +539,7 @@ class CRIClient:
         sent_command = self._send_command(
             command=command, register_answer=True, fixed_answer_name="info_filelist"
         )
-        if (
-            error_msg := await self._wait_for_answer_async(sent_command)
-        ) is not None:
+        if (error_msg := await self._wait_for_answer_async(sent_command)) is not None:
             raise CRICommandError(f"Error in ListFiles command: {error_msg}")
         # the obtained file list is cached in the parser
         with self.parser.file_list_lock:
@@ -690,9 +681,7 @@ class CRIController(CRIClient):
             True,
             f"Active_{str(active).lower()}",
         )
-        if (
-            error_msg := await self._wait_for_answer_async(sent_command)
-        ) is not None:
+        if (error_msg := await self._wait_for_answer_async(sent_command)) is not None:
             logger.debug("Error in set active control command: %s", error_msg)
             return False
         else:
@@ -777,9 +766,7 @@ class CRIController(CRIClient):
         sent_command = self._send_command(
             "CMD GetReferencingInfo", True, "info_referencing"
         )
-        if (
-            error_msg := await self._wait_for_answer_async(sent_command)
-        ) is not None:
+        if (error_msg := await self._wait_for_answer_async(sent_command)) is not None:
             logger.debug("Error in GetReferencingInfo command: %s", error_msg)
             return False
         else:
@@ -1092,7 +1079,9 @@ class CRIController(CRIClient):
             return False
 
         if completion_error is not None:
-            logger.debug("Exec Error in Move BaseRelative command: %s", completion_error)
+            logger.debug(
+                "Exec Error in Move BaseRelative command: %s", completion_error
+            )
             return False
 
         return True

@@ -803,9 +803,7 @@ def test_timeout_removes_fixed_key_event_by_identity():
         event = controller._register_answer("info_filelist")
 
         with pytest.raises(CRICommandTimeOutError):
-            await controller._wait_for_answer_async(
-                SentCommand(42, event), timeout=0.0
-            )
+            await controller._wait_for_answer_async(SentCommand(42, event), timeout=0.0)
 
         assert controller.answer_events == {}
 
@@ -820,9 +818,7 @@ def test_concurrent_move_waiters_share_completion_notification(monkeypatch):
         def send_command(command: str, register_answer: bool) -> SentCommand:
             message_id = next(next_message_id)
             answer_event = controller._register_answer(str(message_id))
-            controller._parse_message(
-                f"CRISTART 1234 CMDACK {message_id} CRIEND"
-            )
+            controller._parse_message(f"CRISTART 1234 CMDACK {message_id} CRIEND")
             return SentCommand(message_id, answer_event)
 
         monkeypatch.setattr(controller, "_send_command", send_command)
